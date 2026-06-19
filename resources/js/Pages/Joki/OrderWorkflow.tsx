@@ -47,33 +47,18 @@ interface Order {
     receipts: Receipt[];
 }
 
-interface OrderWorkflowProps {
-    order: Order;
-}
-
 const STATUS_ACTIONS: Record<string, { label: string; nextStatus: string; confirmMessage: string }> = {
-    ASSIGNED: {
-        label: 'Mulai Belanja',
-        nextStatus: 'SHOPPING',
-        confirmMessage: 'Mulai belanja untuk pesanan ini?',
-    },
-    SHOPPING: {
-        label: 'Antar Pesanan',
-        nextStatus: 'DELIVERING',
-        confirmMessage: 'Belanja selesai dan siap antar pesanan ini?',
-    },
-    DELIVERING: {
-        label: 'Selesaikan Pesanan',
-        nextStatus: 'COMPLETED',
-        confirmMessage: 'Pesanan sudah diterima oleh pembeli?',
-    },
+    ASSIGNED: { label: 'Mulai Belanja', nextStatus: 'SHOPPING', confirmMessage: 'Mulai belanja untuk pesanan ini?' },
+    SHOPPING: { label: 'Antar Pesanan', nextStatus: 'DELIVERING', confirmMessage: 'Belanja selesai dan siap antar pesanan ini?' },
+    DELIVERING: { label: 'Selesaikan Pesanan', nextStatus: 'COMPLETED', confirmMessage: 'Pesanan sudah diterima oleh pembeli?' },
 };
 
-export default function OrderWorkflow({ order }: OrderWorkflowProps) {
+export default function OrderWorkflow({ order }: { order: Order }) {
     const [orderState, setOrderState] = useState<Order>(order);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+    const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
     const { data, setData, post, processing, errors, reset } = useForm({
         actual_amount: orderState.actual_amount !== null ? orderState.actual_amount.toString() : '',
@@ -89,24 +74,15 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
         if (window.Echo && window.Echo.connector.pusher) {
             const connection = window.Echo.connector.pusher.connection;
             setIsConnected(connection.state === 'connected');
-
-            const handleStateChange = (states: { current: string }) => {
-                setIsConnected(states.current === 'connected');
-            };
-
+            const handleStateChange = (states: { current: string }) => setIsConnected(states.current === 'connected');
             connection.bind('state_change', handleStateChange);
-
-            return () => {
-                connection.unbind('state_change', handleStateChange);
-            };
+            return () => connection.unbind('state_change', handleStateChange);
         }
     }, []);
 
     useEffect(() => {
         if (!window.Echo) return;
-
         const channel = window.Echo.private(`orders.${orderState.id}`);
-
         const handleUpdate = (e: any) => {
             setOrderState((prev) => {
                 const updated = {
@@ -116,14 +92,10 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                     refund_amount: e.refund_amount,
                     additional_payment: e.additional_payment,
                 };
-                if (e.receipts) {
-                    updated.receipts = e.receipts;
-                }
+                if (e.receipts) updated.receipts = e.receipts;
                 return updated;
             });
-            if (e.actual_amount !== null) {
-                setData('actual_amount', e.actual_amount.toString());
-            }
+            if (e.actual_amount !== null) setData('actual_amount', e.actual_amount.toString());
         };
 
         channel.listen('OrderAssigned', handleUpdate);
@@ -137,25 +109,8 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
         };
     }, [orderState.id]);
 
-    const formatRupiah = (value: number | null) => {
-        if (value === null) return '-';
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+    const formatRupiah = (value: number | null) =>
+        value === null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
     const action = STATUS_ACTIONS[orderState.status];
     const canComplete = orderState.receipts && orderState.receipts.length > 0 && orderState.actual_amount !== null;
@@ -167,9 +122,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
             return;
         }
         if (confirm(action.confirmMessage)) {
-            router.post(route('joki.orders.status', orderState.id), {
-                status: action.nextStatus,
-            });
+            router.post(route('joki.orders.status', orderState.id), { status: action.nextStatus });
         }
     };
 
@@ -184,364 +137,315 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
         });
     };
 
-    // Real-time calculations for frontend preview
+    const toggleItemCheck = (itemId: number) => setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+
     const estimated = orderState.estimated_amount;
     const actual = parseInt(data.actual_amount) || 0;
     let refund = 0;
     let additional = 0;
 
     if (data.actual_amount !== '') {
-        if (estimated > actual) {
-            refund = estimated - actual;
-        } else if (actual > estimated) {
-            additional = actual - estimated;
-        }
+        if (estimated > actual) refund = estimated - actual;
+        else if (actual > estimated) additional = actual - estimated;
     }
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800 flex items-center gap-3">
-                        Workflow {orderState.order_number}
+        <AuthenticatedLayout>
+            <Head title={`Kerja ${orderState.order_number}`} />
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Link href={route('joki.orders.assigned')} className="text-[var(--pa-text-muted)] hover:text-[var(--pa-primary)] transition-colors flex items-center gap-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                            <span className="pa-body-sm font-semibold">Kembali ke Tugas Saya</span>
+                        </Link>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="pa-headline-lg pa-headline-lg-mobile md:pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>Alur Kerja Joki</h1>
+                        <span className="pa-mono pa-label-caps px-2 py-1 rounded" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                            {orderState.order_number}
+                        </span>
                         {isConnected ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="realtime-status-connected">
-                                ● Realtime Connected
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full pa-label-caps" style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--pa-status-completed)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full pa-pulse-dot" style={{ backgroundColor: 'var(--pa-status-completed)' }}></span>
+                                Live Sync
                             </span>
                         ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500" id="realtime-status-disconnected">
-                                ○ Realtime Disconnected
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full pa-label-caps" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--pa-outline)' }}></span>
+                                Menghubungkan...
                             </span>
                         )}
-                    </h2>
-                    <Link href={route('joki.orders.assigned')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
-                        Kembali
-                    </Link>
+                    </div>
                 </div>
-            }
-        >
-            <Head title={`Workflow ${orderState.order_number}`} />
+                <div className="flex gap-2">
+                    <StatusBadge status={orderState.status} />
+                </div>
+            </div>
 
-            <div className="pa-body">
-                <div className="pa-container">
-                    <div className="pa-detail-grid">
-                        {/* Left Column: Status, Buyer Info, Timeline, Items */}
-                        <div>
-                            {/* Status & Market Card */}
-                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <div className="pa-flex-between">
-                                    <div>
-                                        <div className="pa-subtitle">PASAR TUJUAN</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{orderState.market.name}</h2>
-                                        <p className="pa-subtitle">{orderState.market.address}</p>
-                                    </div>
-                                    <StatusBadge status={orderState.status} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8">
+                {/* Left Column (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Timeline */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <h3 className="pa-headline-md mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>route</span>
+                            Tahapan Pengiriman
+                        </h3>
+                        <ProgressTimeline currentStatus={orderState.status} />
+                    </section>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+                        {/* Market Info */}
+                        <section className="pa-bento-card-static p-6 flex flex-col justify-between">
+                            <div>
+                                <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-text-muted)', marginBottom: 12 }}>
+                                    <span className="material-symbols-outlined text-sm">storefront</span>
+                                    Pasar Tujuan Belanja
+                                </span>
+                                <h3 className="pa-headline-md">{orderState.market.name}</h3>
+                                <p className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{orderState.market.address}</p>
+                            </div>
+                        </section>
+
+                        {/* Buyer Info */}
+                        <section className="pa-bento-card-static p-6 flex flex-col justify-between" style={{ backgroundColor: 'var(--pa-surface-container-low)' }}>
+                            <div>
+                                <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-primary)', marginBottom: 12 }}>
+                                    <span className="material-symbols-outlined text-sm">person</span>
+                                    Penerima (Buyer)
+                                </span>
+                                <h3 className="pa-headline-md">{orderState.buyer.name}</h3>
+                                <p className="pa-mono pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{orderState.buyer.phone_number || 'Tidak ada nomor'}</p>
+                            </div>
+                            {orderState.buyer.phone_number && (
+                                <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--pa-surface-variant)' }}>
+                                    <a href={`tel:${orderState.buyer.phone_number}`} className="pa-btn pa-btn-secondary pa-btn-sm w-full justify-center">
+                                        <span className="material-symbols-outlined text-sm">call</span>
+                                        Hubungi Pembeli
+                                    </a>
                                 </div>
-                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(orderState.created_at)}</p>
-                            </div>
+                            )}
+                        </section>
+                    </div>
 
-                            {/* Buyer Information */}
-                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Informasi Pembeli</h3>
-                                <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
-                                    <div className="pa-subtitle" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>PEMBELI (BUYER)</div>
-                                    <div className="pa-font-bold pa-mt-2">{orderState.buyer.name}</div>
-                                    <div className="pa-subtitle">{orderState.buyer.email}</div>
-                                    <div className="pa-subtitle pa-mt-1">Telp: {orderState.buyer.phone_number || '-'}</div>
-                                </div>
-                            </div>
-
-                            {/* Progress Timeline */}
-                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan</h3>
-                                <ProgressTimeline currentStatus={orderState.status} />
-                            </div>
-
-                            {/* Order Items */}
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold" style={{ fontSize: '1rem' }}>Daftar Belanjaan</h3>
-                                <div className="pa-table-container">
-                                    <table className="pa-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nama Barang</th>
-                                                <th>Jumlah</th>
-                                                <th>Catatan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {orderState.items.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td className="pa-font-bold">{item.product_name}</td>
-                                                    <td>{item.quantity}x</td>
-                                                    <td className="pa-subtitle">{item.notes || '-'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                    {/* Interactive Checklist */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="pa-headline-md flex items-center gap-2">
+                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>checklist</span>
+                                Daftar Belanjaan
+                            </h3>
+                            <span className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>
+                                {Object.values(checkedItems).filter(Boolean).length}/{orderState.items.length} Dibeli
+                            </span>
                         </div>
-
-                        {/* Right Column: Cost Summary & Action & Settlement Form */}
-                        <div>
-                            {/* Cost Panel */}
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Rincian Biaya</h3>
-
-                                <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
-                                    <span className="pa-subtitle">Estimasi Deposito</span>
-                                    <span className="pa-font-bold">{formatRupiah(estimated)}</span>
-                                </div>
-
-                                <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
-                                    <span className="pa-subtitle">Biaya Riil Belanja</span>
-                                    <span className={orderState.actual_amount !== null ? 'pa-font-bold' : 'pa-subtitle'}>
-                                        {formatRupiah(orderState.actual_amount)}
-                                    </span>
-                                </div>
-
-                                {orderState.actual_amount !== null && (
-                                    <>
-                                        {orderState.refund_amount !== null && orderState.refund_amount > 0 && (
-                                            <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)', color: 'var(--pa-primary-dark)' }}>
-                                                <span className="pa-subtitle" style={{ color: 'var(--pa-primary-dark)' }}>Selisih Kembalian (Refund)</span>
-                                                <span className="pa-font-bold">{formatRupiah(orderState.refund_amount)}</span>
+                        <div className="flex flex-col gap-3">
+                            {orderState.items.map((item) => {
+                                const isChecked = !!checkedItems[item.id];
+                                return (
+                                    <div 
+                                        key={item.id} 
+                                        onClick={() => toggleItemCheck(item.id)}
+                                        className="flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-colors"
+                                        style={{ 
+                                            backgroundColor: isChecked ? 'rgba(16,185,129,0.05)' : 'var(--pa-surface)', 
+                                            border: `1px solid ${isChecked ? 'rgba(16,185,129,0.2)' : 'var(--pa-surface-variant)'}`
+                                        }}
+                                    >
+                                        <div 
+                                            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors"
+                                            style={{ 
+                                                backgroundColor: isChecked ? 'var(--pa-status-completed)' : 'transparent',
+                                                border: `2px solid ${isChecked ? 'var(--pa-status-completed)' : 'var(--pa-outline)'}`
+                                            }}
+                                        >
+                                            {isChecked && <span className="material-symbols-outlined text-white" style={{ fontSize: 16 }}>check</span>}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="pa-body-lg" style={{ fontWeight: 600, color: isChecked ? 'var(--pa-text-muted)' : 'var(--pa-text-main)', textDecoration: isChecked ? 'line-through' : 'none' }}>
+                                                {item.product_name}
                                             </div>
-                                        )}
-                                        {orderState.additional_payment !== null && orderState.additional_payment > 0 && (
-                                            <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)', color: 'var(--pa-danger)' }}>
-                                                <span className="pa-subtitle" style={{ color: 'var(--pa-danger)' }}>Kurang Bayar (Additional)</span>
-                                                <span className="pa-font-bold">{formatRupiah(orderState.additional_payment)}</span>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
+                                            {item.notes && <div className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>Catatan: {item.notes}</div>}
+                                        </div>
+                                        <div className="pa-mono pa-headline-md shrink-0 py-1 px-3 rounded-lg" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-main)' }}>
+                                            {item.quantity}x
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                </div>
+
+                {/* Right Column (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Primary Action Button */}
+                    {action && (
+                        <div className="pa-bento-card-static p-6" style={{ background: `linear-gradient(135deg, var(--pa-primary-fixed) 0%, var(--pa-surface-container-lowest) 100%)` }}>
+                            <span className="pa-label-caps block mb-3" style={{ color: 'var(--pa-primary)' }}>Aksi Tahapan Selanjutnya</span>
+                            {action.nextStatus === 'COMPLETED' && !canComplete && (
+                                <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.2)' }}>
+                                    <p className="pa-body-sm" style={{ color: 'var(--pa-alert-rose)' }}>⚠️ Lengkapi penyelesaian belanja (nominal fisik & nota) sebelum menyelesaikan transaksi.</p>
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleStatusUpdate}
+                                className="w-full pa-btn pa-btn-primary pa-button-text py-4 rounded-xl shadow-sm justify-center"
+                                disabled={action.nextStatus === 'COMPLETED' && !canComplete}
+                            >
+                                {action.label}
+                            </button>
+                        </div>
+                    )}
+
+                    {orderState.status === 'COMPLETED' && (
+                        <div className="pa-bento-card-static p-6 text-center" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
+                            <span className="material-symbols-outlined text-4xl mb-2" style={{ color: 'var(--pa-status-completed)' }}>verified</span>
+                            <h3 className="pa-headline-md" style={{ color: 'var(--pa-status-completed)' }}>Tugas Selesai</h3>
+                            <p className="pa-body-sm mt-1" style={{ color: 'var(--pa-status-completed)', opacity: 0.8 }}>Transaksi ini telah selesai diproses.</p>
+                        </div>
+                    )}
+
+                    {/* Settlement Form */}
+                    {(orderState.status === 'SHOPPING' || orderState.status === 'DELIVERING' || orderState.status === 'COMPLETED') && (
+                        <section className="pa-bento-card-static p-6">
+                            <h3 className="pa-headline-md mb-6 pb-4" style={{ borderBottom: '1px solid var(--pa-surface-variant)' }}>Penyelesaian Belanja</h3>
+                            
+                            <div className="flex flex-col gap-4 mb-6">
+                                <div className="flex justify-between items-center">
+                                    <span className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Estimasi Deposit</span>
+                                    <span className="pa-mono pa-button-text">{formatRupiah(estimated)}</span>
+                                </div>
                             </div>
 
-                            {/* Settlement Form (Only during SHOPPING or DELIVERING) */}
-                            {(orderState.status === 'SHOPPING' || orderState.status === 'DELIVERING') && (
-                                <form onSubmit={handleSubmitSettlement} className="pa-form-section pa-mt-4">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Penyelesaian Belanja</h3>
+                            {(orderState.status === 'SHOPPING' || orderState.status === 'DELIVERING') ? (
+                                <form onSubmit={handleSubmitSettlement}>
+                                    <div className="flex flex-col gap-4 mb-6">
+                                        <div>
+                                            <label className="pa-body-sm block mb-1" style={{ fontWeight: 600 }}>Total Belanja Riil (Rp)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-transparent pa-mono pa-headline-md"
+                                                style={{ borderBottom: '2px solid var(--pa-primary)', borderRadius: 0, padding: '0.5rem 0' }}
+                                                placeholder="0"
+                                                value={data.actual_amount}
+                                                onChange={e => setData('actual_amount', e.target.value)}
+                                                min="0"
+                                                required
+                                            />
+                                            {errors.actual_amount && <p className="text-xs text-rose-600 mt-1">{errors.actual_amount}</p>}
+                                        </div>
 
-                                    <div className="pa-form-group">
-                                        <label className="pa-form-label" htmlFor="actual_amount">
-                                            Total Belanja Riil (Rp)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="actual_amount"
-                                            name="actual_amount"
-                                            className="pa-input-text"
-                                            placeholder="Masukkan total belanja fisik"
-                                            value={data.actual_amount}
-                                            onChange={e => setData('actual_amount', e.target.value)}
-                                            min="0"
-                                            required
-                                        />
-                                        {errors.actual_amount && (
-                                            <p className="pa-subtitle pa-mt-1" style={{ color: 'var(--pa-danger)' }}>{errors.actual_amount}</p>
+                                        <div>
+                                            <label className="pa-body-sm block mb-1" style={{ fontWeight: 600 }}>Unggah Foto Nota</label>
+                                            <input
+                                                type="file"
+                                                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                                accept="image/*"
+                                                onChange={e => {
+                                                    const files = e.target.files;
+                                                    if (files && files.length > 0) {
+                                                        setData('receipt', files[0]);
+                                                        setReceiptPreview(URL.createObjectURL(files[0]));
+                                                    }
+                                                }}
+                                                required={!orderState.receipts || orderState.receipts.length === 0}
+                                            />
+                                            {errors.receipt && <p className="text-xs text-rose-600 mt-1">{errors.receipt}</p>}
+                                        </div>
+
+                                        {receiptPreview && (
+                                            <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                                                <img src={receiptPreview} alt="Preview Nota" className="w-full h-32 object-cover" />
+                                            </div>
+                                        )}
+
+                                        {/* Live Calculation Preview */}
+                                        {data.actual_amount !== '' && (
+                                            <div className="rounded-xl p-4 mt-2" style={{ backgroundColor: 'var(--pa-surface-container)' }}>
+                                                {refund > 0 && (
+                                                    <div>
+                                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-status-completed)' }}>Kembalikan ke Buyer (Refund)</span>
+                                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-status-completed)' }}>{formatRupiah(refund)}</span>
+                                                    </div>
+                                                )}
+                                                {additional > 0 && (
+                                                    <div>
+                                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-alert-rose)' }}>Minta dari Buyer</span>
+                                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-alert-rose)' }}>{formatRupiah(additional)}</span>
+                                                    </div>
+                                                )}
+                                                {refund === 0 && additional === 0 && (
+                                                    <div>
+                                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-text-muted)' }}>Jumlah Pas</span>
+                                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>{formatRupiah(0)}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
-
-                                    <div className="pa-form-group">
-                                        <label className="pa-form-label" htmlFor="receipt">
-                                            Foto Nota Belanja
-                                        </label>
-                                        <input
-                                            type="file"
-                                            id="receipt"
-                                            name="receipt"
-                                            className="pa-input-text"
-                                            accept="image/*"
-                                            onChange={e => {
-                                                const files = e.target.files;
-                                                if (files && files.length > 0) {
-                                                    setData('receipt', files[0]);
-                                                    setReceiptPreview(URL.createObjectURL(files[0]));
-                                                }
-                                            }}
-                                            required={!orderState.receipts || orderState.receipts.length === 0}
-                                        />
-                                        {errors.receipt && (
-                                            <p className="pa-subtitle pa-mt-1" style={{ color: 'var(--pa-danger)' }}>{errors.receipt}</p>
-                                        )}
-                                    </div>
-
-                                    {/* Local File Preview */}
-                                    {receiptPreview && (
-                                        <div className="pa-mb-4">
-                                            <span className="pa-subtitle">Preview Nota Baru:</span>
-                                            <div style={{ marginTop: '0.25rem' }}>
-                                                <img
-                                                    src={receiptPreview}
-                                                    alt="Preview Nota"
-                                                    style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '0.5rem', border: '1px solid var(--pa-border)', objectFit: 'contain' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Existing Receipts Thumbnail */}
-                                    {orderState.receipts && orderState.receipts.length > 0 && (
-                                        <div className="pa-mb-4">
-                                            <span className="pa-subtitle">Nota Terunggah:</span>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                                                {orderState.receipts.map((r) => (
-                                                    <img
-                                                        key={r.id}
-                                                        src={r.image_url}
-                                                        alt="Nota Terunggah"
-                                                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid var(--pa-border)', cursor: 'pointer' }}
-                                                        onClick={() => setZoomedImage(r.image_url)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Live Settlement Calculation Preview */}
-                                    {data.actual_amount !== '' && (
-                                        <div className="pa-mb-4" style={{ padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: refund > 0 ? '#ecfdf5' : additional > 0 ? '#fef2f2' : '#f9fafb', border: '1px solid', borderColor: refund > 0 ? '#10b981' : additional > 0 ? '#ef4444' : 'var(--pa-border)' }}>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: refund > 0 ? '#047857' : additional > 0 ? '#b91c1c' : 'var(--pa-text-muted)', marginBottom: '0.25rem' }}>
-                                                ESTIMASI SELISIH (PREVIEW SEBELUM DISIMPAN)
-                                            </div>
-                                            <div className="pa-flex-between" style={{ fontSize: '0.875rem' }}>
-                                                <span>Estimasi Deposito:</span>
-                                                <span className="pa-font-bold">{formatRupiah(estimated)}</span>
-                                            </div>
-                                            <div className="pa-flex-between pa-mt-1" style={{ fontSize: '0.875rem' }}>
-                                                <span>Belanja Riil:</span>
-                                                <span className="pa-font-bold">{formatRupiah(actual)}</span>
-                                            </div>
-                                            {refund > 0 && (
-                                                <div className="pa-flex-between pa-mt-2" style={{ color: '#047857', borderTop: '1px dashed #10b981', paddingTop: '0.5rem' }}>
-                                                    <span>Kembalian ke Buyer:</span>
-                                                    <span className="pa-font-bold">{formatRupiah(refund)}</span>
-                                                </div>
-                                            )}
-                                            {additional > 0 && (
-                                                <div className="pa-flex-between pa-mt-2" style={{ color: '#b91c1c', borderTop: '1px dashed #ef4444', paddingTop: '0.5rem' }}>
-                                                    <span>Kurang Bayar (Joki):</span>
-                                                    <span className="pa-font-bold">{formatRupiah(additional)}</span>
-                                                </div>
-                                            )}
-                                            {refund === 0 && additional === 0 && (
-                                                <div className="pa-flex-between pa-mt-2" style={{ color: 'var(--pa-text-muted)', borderTop: '1px dashed var(--pa-border)', paddingTop: '0.5rem' }}>
-                                                    <span>Jumlah Pas:</span>
-                                                    <span className="pa-font-bold">{formatRupiah(0)}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="submit"
-                                        className="pa-btn pa-btn-secondary"
-                                        style={{ width: '100%', minHeight: '40px' }}
-                                        disabled={processing}
-                                    >
-                                        {processing ? 'Menyimpan...' : 'Simpan Nota & Settlement'}
+                                    <button type="submit" disabled={processing} className="w-full pa-btn pa-btn-secondary justify-center">
+                                        {processing ? 'Menyimpan...' : 'Simpan & Hitung'}
                                     </button>
                                 </form>
-                            )}
-
-                            {/* Action Button for Workflow Progress */}
-                            {action && (
-                                <div className="pa-form-section pa-mt-4">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Aksi Selanjutnya</h3>
-                                    
-                                    {action.nextStatus === 'COMPLETED' && !canComplete && (
-                                        <div style={{ backgroundColor: '#fef3c7', border: '1px solid #d97706', color: '#92400e', padding: '0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                                            ⚠️ Selesaikan form <strong>Penyelesaian Belanja</strong> terlebih dahulu (input nominal riil belanja & unggah foto nota belanja) sebelum dapat menyelesaikan pesanan.
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        onClick={handleStatusUpdate}
-                                        className="pa-btn pa-btn-primary"
-                                        style={{ width: '100%' }}
-                                        disabled={action.nextStatus === 'COMPLETED' && !canComplete}
-                                    >
-                                        {action.label}
-                                    </button>
-                                </div>
-                            )}
-
-                            {orderState.status === 'COMPLETED' && (
-                                <div className="pa-form-section pa-mt-4" style={{ backgroundColor: 'var(--pa-primary-light)', border: '1px solid var(--pa-primary)' }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
-                                        <h3 className="pa-font-bold" style={{ color: 'var(--pa-primary-dark)' }}>Pesanan Selesai</h3>
-                                        <p className="pa-subtitle pa-mt-2 font-medium text-emerald-800">Pesanan ini telah diselesaikan dan nota belanja telah disimpan.</p>
+                            ) : (
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Total Belanja Aktual</span>
+                                        <span className="pa-mono pa-headline-md" style={{ color: 'var(--pa-text-main)' }}>{formatRupiah(orderState.actual_amount)}</span>
+                                    </div>
+                                    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--pa-surface-variant)' }}>
+                                        {orderState.refund_amount !== null && orderState.refund_amount > 0 ? (
+                                            <div className="p-4" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
+                                                <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-status-completed)' }}>Kembalikan ke Buyer (Refund)</span>
+                                                <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-status-completed)' }}>{formatRupiah(orderState.refund_amount)}</span>
+                                            </div>
+                                        ) : orderState.additional_payment !== null && orderState.additional_payment > 0 ? (
+                                            <div className="p-4" style={{ backgroundColor: 'rgba(225,29,72,0.1)' }}>
+                                                <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-alert-rose)' }}>Minta dari Buyer</span>
+                                                <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-alert-rose)' }}>{formatRupiah(orderState.additional_payment)}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4" style={{ backgroundColor: 'var(--pa-surface-container)' }}>
+                                                <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-text-muted)' }}>Jumlah Pas</span>
+                                                <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>{formatRupiah(0)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Receipt Image Thumbnail (Read Only when COMPLETED) */}
-                            {orderState.status === 'COMPLETED' && orderState.receipts && orderState.receipts.length > 0 && (
-                                <div className="pa-form-section pa-mt-4">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Nota Terlampir</h3>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {/* Existing Receipts Thumbnail */}
+                            {orderState.receipts && orderState.receipts.length > 0 && (
+                                <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--pa-surface-variant)' }}>
+                                    <span className="pa-label-caps block mb-3" style={{ color: 'var(--pa-text-muted)' }}>Nota Terunggah</span>
+                                    <div className="flex gap-2 flex-wrap">
                                         {orderState.receipts.map((r) => (
-                                            <img
-                                                key={r.id}
-                                                src={r.image_url}
-                                                alt="Nota Belanja"
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '0.5rem', border: '1px solid var(--pa-border)', cursor: 'pointer' }}
-                                                onClick={() => setZoomedImage(r.image_url)}
-                                            />
+                                            <div key={r.id} className="relative group cursor-zoom-in rounded-lg overflow-hidden border border-gray-200" onClick={() => setZoomedImage(r.image_url)}>
+                                                <img src={r.image_url} alt="Nota" className="w-16 h-16 object-cover group-hover:scale-105 transition-transform" />
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    </div>
+                        </section>
+                    )}
                 </div>
             </div>
 
             {/* Zoom Modal */}
             {zoomedImage && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.85)',
-                        zIndex: 9999,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '1.5rem',
-                        cursor: 'zoom-out'
-                    }}
-                    onClick={() => setZoomedImage(null)}
-                >
-                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} onClick={e => e.stopPropagation()}>
-                        <img
-                            src={zoomedImage}
-                            alt="Nota Besar"
-                            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '0.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', objectFit: 'contain' }}
-                        />
-                        <button
-                            onClick={() => setZoomedImage(null)}
-                            style={{
-                                position: 'absolute',
-                                top: '-2.5rem',
-                                right: 0,
-                                color: 'white',
-                                fontFamily: 'sans-serif',
-                                fontSize: '1.5rem',
-                                border: 'none',
-                                background: 'transparent',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            ✕ Tutup
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 cursor-zoom-out" onClick={() => setZoomedImage(null)}>
+                    <div className="relative max-w-4xl w-full max-h-screen p-4 flex flex-col items-center">
+                        <button onClick={() => setZoomedImage(null)} className="absolute top-0 right-4 pa-btn pa-btn-secondary bg-white/10 text-white border-0 hover:bg-white/20">
+                            <span className="material-symbols-outlined">close</span> Tutup
                         </button>
+                        <img src={zoomedImage} alt="Nota Besar" className="max-w-full max-h-[85vh] object-contain rounded-xl mt-12" onClick={e => e.stopPropagation()} />
                     </div>
                 </div>
             )}

@@ -20,9 +20,7 @@ interface OrderItem {
 interface Receipt {
     id: number;
     image_url: string;
-    uploader?: {
-        name: string;
-    };
+    uploader?: { name: string };
 }
 
 interface Order {
@@ -40,41 +38,26 @@ interface Order {
     receipts: Receipt[];
 }
 
-interface OrderDetailProps {
-    order: Order;
-}
-
-export default function OrderDetail({ order }: OrderDetailProps) {
+export default function OrderDetail({ order }: { order: Order }) {
     const [orderState, setOrderState] = useState<Order>(order);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-    useEffect(() => {
-        setOrderState(order);
-    }, [order]);
+    useEffect(() => setOrderState(order), [order]);
 
     useEffect(() => {
         if (window.Echo && window.Echo.connector.pusher) {
             const connection = window.Echo.connector.pusher.connection;
             setIsConnected(connection.state === 'connected');
-
-            const handleStateChange = (states: { current: string }) => {
-                setIsConnected(states.current === 'connected');
-            };
-
+            const handleStateChange = (states: { current: string }) => setIsConnected(states.current === 'connected');
             connection.bind('state_change', handleStateChange);
-
-            return () => {
-                connection.unbind('state_change', handleStateChange);
-            };
+            return () => connection.unbind('state_change', handleStateChange);
         }
     }, []);
 
     useEffect(() => {
         if (!window.Echo) return;
-
         const channel = window.Echo.private(`orders.${orderState.id}`);
-
         const handleUpdate = (e: any) => {
             setOrderState((prev) => {
                 const updated = {
@@ -85,15 +68,9 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                     additional_payment: e.additional_payment,
                 };
                 if (e.assigned_joki_name) {
-                    updated.joki = {
-                        id: prev.joki?.id ?? 0,
-                        name: e.assigned_joki_name,
-                        phone_number: e.assigned_joki_phone ?? null,
-                    };
+                    updated.joki = { id: prev.joki?.id ?? 0, name: e.assigned_joki_name, phone_number: e.assigned_joki_phone ?? null };
                 }
-                if (e.receipts) {
-                    updated.receipts = e.receipts;
-                }
+                if (e.receipts) updated.receipts = e.receipts;
                 return updated;
             });
         };
@@ -109,222 +86,211 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         };
     }, [orderState.id]);
 
-    const formatRupiah = (value: number | null) => {
-        if (value === null) return '-';
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
+    const formatRupiah = (value: number | null) =>
+        value === null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800 flex items-center gap-3">
-                        Detail Pesanan {orderState.order_number}
+        <AuthenticatedLayout>
+            <Head title={`Pesanan ${orderState.order_number}`} />
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Link href={route('orders.index')} className="text-[var(--pa-text-muted)] hover:text-[var(--pa-primary)] transition-colors flex items-center gap-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                            <span className="pa-body-sm font-semibold">Kembali ke Daftar Pesanan</span>
+                        </Link>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="pa-headline-lg pa-headline-lg-mobile md:pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>Detail Pesanan</h1>
+                        <span className="pa-mono pa-label-caps px-2 py-1 rounded" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                            {orderState.order_number}
+                        </span>
                         {isConnected ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="realtime-status-connected">
-                                ● Realtime Connected
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full pa-label-caps" style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--pa-status-completed)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full pa-pulse-dot" style={{ backgroundColor: 'var(--pa-status-completed)' }}></span>
+                                Live
                             </span>
                         ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500" id="realtime-status-disconnected">
-                                ○ Realtime Disconnected
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full pa-label-caps" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--pa-outline)' }}></span>
+                                Menghubungkan...
                             </span>
                         )}
-                    </h2>
-                    <Link href={route('orders.index')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
-                        Kembali ke Daftar
-                    </Link>
+                    </div>
                 </div>
-            }
-        >
-            <Head title={`Detail Pesanan ${orderState.order_number}`} />
+                <div className="flex gap-2">
+                    <StatusBadge status={orderState.status} />
+                </div>
+            </div>
 
-            <div className="pa-body">
-                <div className="pa-container">
-                    <div className="pa-detail-grid">
-                        {/* Kolom Kiri: Status, Timeline & Barang */}
-                        <div>
-                            {/* Card Status & Pasar */}
-                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <div className="pa-flex-between">
-                                    <div>
-                                        <div className="pa-subtitle">PASAR TUJUAN</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{orderState.market.name}</h2>
-                                        <p className="pa-subtitle">{orderState.market.address}</p>
-                                    </div>
-                                    <StatusBadge status={orderState.status} />
-                                </div>
-                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(orderState.created_at)}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8">
+                {/* Left Column (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Timeline */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <h3 className="pa-headline-md mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>route</span>
+                            Perjalanan Pesanan
+                        </h3>
+                        <ProgressTimeline currentStatus={orderState.status} />
+                    </section>
+
+                    {/* Market & Joki Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+                        <section className="pa-bento-card-static p-6 flex flex-col justify-between">
+                            <div>
+                                <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-text-muted)', marginBottom: 12 }}>
+                                    <span className="material-symbols-outlined text-sm">storefront</span>
+                                    Pasar Tujuan
+                                </span>
+                                <h3 className="pa-headline-md">{orderState.market.name}</h3>
+                                <p className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{orderState.market.address}</p>
                             </div>
-
-                            {/* Joki Information */}
-                            {orderState.joki && (
-                                <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Joki Yang Bertugas</h3>
-                                    <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
-                                        <div className="pa-font-bold">{orderState.joki.name}</div>
-                                        <div className="pa-subtitle pa-mt-1">Telp: {orderState.joki.phone_number || '-'}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Progress Timeline */}
-                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan Belanja</h3>
-                                <ProgressTimeline currentStatus={orderState.status} />
+                            <div className="mt-6 pt-4 flex flex-col gap-1" style={{ borderTop: '1px solid var(--pa-surface-variant)' }}>
+                                <span className="pa-label-caps" style={{ color: 'var(--pa-text-muted)', fontSize: 10 }}>Dibuat Pada</span>
+                                <span className="pa-body-sm" style={{ fontWeight: 600 }}>{formatDate(orderState.created_at)}</span>
                             </div>
+                        </section>
 
-                            {/* Daftar Barang Belanjaan */}
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold" style={{ fontSize: '1rem' }}>Daftar Belanjaan</h3>
-                                <div className="pa-table-container">
-                                    <table className="pa-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nama Barang</th>
-                                                <th>Jumlah</th>
-                                                <th>Catatan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {orderState.items.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td className="pa-font-bold">{item.product_name}</td>
-                                                    <td>{item.quantity}x</td>
-                                                    <td className="pa-subtitle">{item.notes || '-'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Kolom Kanan: Rincian Biaya & Settlement */}
-                        <div>
-                            {/* Panel Ringkasan Biaya */}
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Rincian Biaya</h3>
-                                
-                                <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
-                                    <span className="pa-subtitle">Estimasi Deposito</span>
-                                    <span className="pa-font-bold">{formatRupiah(orderState.estimated_amount)}</span>
-                                </div>
-
-                                <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
-                                    <span className="pa-subtitle">Biaya Riil Belanja</span>
-                                    <span className={orderState.actual_amount !== null ? 'pa-font-bold' : ''}>
-                                        {formatRupiah(orderState.actual_amount)}
-                                    </span>
-                                </div>
-
-                                {orderState.actual_amount !== null && (
+                        <section className="pa-bento-card-static p-6 flex flex-col justify-between" style={{ backgroundColor: 'var(--pa-surface-container-low)' }}>
+                            <div>
+                                <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-primary)', marginBottom: 12 }}>
+                                    <span className="material-symbols-outlined text-sm">two_wheeler</span>
+                                    Joki Pendamping
+                                </span>
+                                {orderState.joki ? (
                                     <>
-                                        {orderState.refund_amount !== null && orderState.refund_amount > 0 ? (
-                                            <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: 'var(--pa-primary-light)', color: 'var(--pa-primary-dark)' }}>
-                                                <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Uang Kembali (Refund)</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(orderState.refund_amount)}</span>
-                                            </div>
-                                        ) : null}
-
-                                        {orderState.additional_payment !== null && orderState.additional_payment > 0 ? (
-                                            <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#fef3c7', color: '#92400e' }}>
-                                                <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Kekurangan Bayar</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(orderState.additional_payment)}</span>
-                                            </div>
-                                        ) : null}
-
-                                        {orderState.refund_amount === 0 && orderState.additional_payment === 0 ? (
-                                            <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: 'var(--pa-secondary-light)', color: 'var(--pa-secondary-dark)' }}>
-                                                <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Jumlah Belanja Sesuai</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(0)}</span>
-                                            </div>
-                                        ) : null}
+                                        <h3 className="pa-headline-md">{orderState.joki.name}</h3>
+                                        <p className="pa-mono pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{orderState.joki.phone_number || 'Tidak ada nomor'}</p>
                                     </>
+                                ) : (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                                            <span className="material-symbols-outlined">person_search</span>
+                                        </div>
+                                        <span className="pa-body-sm italic" style={{ color: 'var(--pa-text-muted)' }}>Mencari Joki terdekat...</span>
+                                    </div>
                                 )}
                             </div>
-
-                            {/* Bukti Nota Belanja */}
-                            {orderState.receipts && orderState.receipts.length > 0 && (
-                                <div className="pa-form-section pa-mt-4">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Nota Belanja Fisik</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {orderState.receipts.map((receipt) => (
-                                            <div key={receipt.id} style={{ borderBottom: '1px solid var(--pa-border)', paddingBottom: '1rem' }}>
-                                                <img 
-                                                    src={receipt.image_url} 
-                                                    alt="Nota Belanja" 
-                                                    style={{ width: '100%', borderRadius: '0.5rem', border: '1px solid var(--pa-border)', maxHeight: '300px', objectFit: 'contain', cursor: 'pointer' }} 
-                                                    onClick={() => setZoomedImage(receipt.image_url)}
-                                                />
-                                                {receipt.uploader && (
-                                                    <p className="pa-subtitle pa-mt-2" style={{ fontSize: '0.75rem' }}>Diunggah oleh: {receipt.uploader.name}</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+                            {orderState.joki?.phone_number && (
+                                <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--pa-surface-variant)' }}>
+                                    <a href={`tel:${orderState.joki.phone_number}`} className="pa-btn pa-btn-secondary pa-btn-sm w-full justify-center">
+                                        <span className="material-symbols-outlined text-sm">call</span>
+                                        Hubungi Joki
+                                    </a>
                                 </div>
                             )}
-                        </div>
+                        </section>
                     </div>
+
+                    {/* Items List */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <h3 className="pa-headline-md mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>receipt_long</span>
+                            Daftar Belanjaan ({orderState.items.length} Barang)
+                        </h3>
+                        <div className="flex flex-col gap-3">
+                            {orderState.items.map((item) => (
+                                <div key={item.id} className="flex items-start justify-between p-4 rounded-xl" style={{ backgroundColor: 'var(--pa-surface)', border: '1px solid var(--pa-surface-variant)' }}>
+                                    <div>
+                                        <div className="pa-body-lg" style={{ fontWeight: 600 }}>{item.product_name}</div>
+                                        {item.notes && <div className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>Catatan: {item.notes}</div>}
+                                    </div>
+                                    <div className="pa-mono pa-headline-md shrink-0 py-1 px-3 rounded-lg" style={{ backgroundColor: 'var(--pa-primary-fixed)', color: 'var(--pa-primary)' }}>
+                                        {item.quantity}x
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+
+                {/* Right Column (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Financial Summary */}
+                    <section className="pa-bento-card-static p-6">
+                        <h3 className="pa-headline-md mb-6 pb-4" style={{ borderBottom: '1px solid var(--pa-surface-variant)' }}>Rincian Biaya</h3>
+                        
+                        <div className="flex flex-col gap-4 mb-6">
+                            <div className="flex justify-between items-center">
+                                <span className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Estimasi Deposit</span>
+                                <span className="pa-mono pa-button-text">{formatRupiah(orderState.estimated_amount)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Total Belanja Aktual</span>
+                                <span className="pa-mono pa-headline-md" style={{ color: orderState.actual_amount !== null ? 'var(--pa-text-main)' : 'var(--pa-text-muted)' }}>
+                                    {formatRupiah(orderState.actual_amount)}
+                                </span>
+                            </div>
+                        </div>
+
+                        {orderState.actual_amount !== null && (
+                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--pa-surface-variant)' }}>
+                                {orderState.refund_amount !== null && orderState.refund_amount > 0 ? (
+                                    <div className="p-4" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
+                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-status-completed)' }}>Sisa Kembalian (Refund)</span>
+                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-status-completed)' }}>{formatRupiah(orderState.refund_amount)}</span>
+                                        <p className="pa-body-sm mt-2" style={{ color: 'var(--pa-status-completed)', opacity: 0.8 }}>Dana akan dikembalikan oleh Joki.</p>
+                                    </div>
+                                ) : orderState.additional_payment !== null && orderState.additional_payment > 0 ? (
+                                    <div className="p-4" style={{ backgroundColor: 'rgba(225,29,72,0.1)' }}>
+                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-alert-rose)' }}>Kekurangan Bayar</span>
+                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-alert-rose)' }}>{formatRupiah(orderState.additional_payment)}</span>
+                                        <p className="pa-body-sm mt-2" style={{ color: 'var(--pa-alert-rose)', opacity: 0.8 }}>Bayarkan kekurangan ini ke Joki.</p>
+                                    </div>
+                                ) : (
+                                    <div className="p-4" style={{ backgroundColor: 'var(--pa-surface-container)' }}>
+                                        <span className="pa-label-caps block mb-1" style={{ color: 'var(--pa-text-muted)' }}>Jumlah Pas</span>
+                                        <span className="pa-mono pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>{formatRupiah(0)}</span>
+                                        <p className="pa-body-sm mt-2" style={{ color: 'var(--pa-text-muted)' }}>Dana terpakai pas dengan estimasi.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Receipts */}
+                    {orderState.receipts && orderState.receipts.length > 0 && (
+                        <section className="pa-bento-card-static p-6">
+                            <h3 className="pa-headline-md mb-4 flex items-center gap-2">
+                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>image</span>
+                                Bukti Nota Belanja
+                            </h3>
+                            <div className="flex flex-col gap-4">
+                                {orderState.receipts.map(receipt => (
+                                    <div key={receipt.id} className="rounded-xl overflow-hidden cursor-zoom-in relative group" style={{ border: '1px solid var(--pa-surface-variant)' }} onClick={() => setZoomedImage(receipt.image_url)}>
+                                        <img src={receipt.image_url} alt="Nota" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                            <span className="material-symbols-outlined text-white" style={{ fontSize: 32 }}>zoom_in</span>
+                                        </div>
+                                        {receipt.uploader && (
+                                            <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 text-white pa-label-caps text-xs">
+                                                Diupload oleh: {receipt.uploader.name}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             </div>
 
             {/* Zoom Modal */}
             {zoomedImage && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.85)',
-                        zIndex: 9999,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '1.5rem',
-                        cursor: 'zoom-out'
-                    }}
-                    onClick={() => setZoomedImage(null)}
-                >
-                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} onClick={e => e.stopPropagation()}>
-                        <img
-                            src={zoomedImage}
-                            alt="Nota Besar"
-                            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '0.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', objectFit: 'contain' }}
-                        />
-                        <button
-                            onClick={() => setZoomedImage(null)}
-                            style={{
-                                position: 'absolute',
-                                top: '-2.5rem',
-                                right: 0,
-                                color: 'white',
-                                fontFamily: 'sans-serif',
-                                fontSize: '1.5rem',
-                                border: 'none',
-                                background: 'transparent',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            ✕ Tutup
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 cursor-zoom-out" onClick={() => setZoomedImage(null)}>
+                    <div className="relative max-w-4xl w-full max-h-screen p-4 flex flex-col items-center">
+                        <button onClick={() => setZoomedImage(null)} className="absolute top-0 right-4 pa-btn pa-btn-secondary bg-white/10 text-white border-0 hover:bg-white/20">
+                            <span className="material-symbols-outlined">close</span> Tutup
                         </button>
+                        <img src={zoomedImage} alt="Nota Besar" className="max-w-full max-h-[85vh] object-contain rounded-xl mt-12" onClick={e => e.stopPropagation()} />
                     </div>
                 </div>
             )}

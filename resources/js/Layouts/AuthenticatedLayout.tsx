@@ -1,9 +1,6 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
-import { PropsWithChildren, ReactNode, useState } from 'react';
+import { PropsWithChildren, ReactNode } from 'react';
 
 export default function Authenticated({
     header,
@@ -11,265 +8,174 @@ export default function Authenticated({
 }: PropsWithChildren<{ header?: ReactNode }>) {
     const user = usePage().props.auth.user;
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    const isBuyerMarket = route().current('markets.index') || route().current('orders.create');
+    const isBuyerOrder = route().current('orders.index') || route().current('orders.show');
+    const isJokiAvailable = route().current('joki.orders.index');
+    const isJokiAssigned = route().current('joki.orders.assigned') || route().current('joki.orders.show');
+    const isJokiChecklist = route().current('joki.checklists.index') || route().current('joki.checklists.show');
+    const isAdminOrder = route().current('admin.orders.index') || route().current('admin.orders.show');
+    const isAdminChecklist = route().current('admin.checklists.index') || route().current('admin.checklists.show');
+    const isProfile = route().current('profile.edit');
+
+    const navItems = (() => {
+        if (user.role === 'buyer') return [
+            { href: route('markets.index'), icon: 'storefront', label: 'Pilih Pasar', active: !!isBuyerMarket },
+            { href: route('orders.index'), icon: 'receipt_long', label: 'Pesanan Saya', active: !!isBuyerOrder },
+        ];
+        if (user.role === 'joki') return [
+            { href: route('joki.orders.index'), icon: 'shopping_basket', label: 'Tersedia', active: !!isJokiAvailable },
+            { href: route('joki.orders.assigned'), icon: 'local_shipping', label: 'Tugas Saya', active: !!isJokiAssigned },
+            { href: route('joki.checklists.index'), icon: 'checklist', label: 'Checklist', active: !!isJokiChecklist },
+        ];
+        if (user.role === 'admin') return [
+            { href: route('admin.orders.index'), icon: 'list_alt', label: 'Semua Pesanan', active: !!isAdminOrder },
+            { href: route('admin.checklists.index'), icon: 'checklist', label: 'Checklist', active: !!isAdminChecklist },
+        ];
+        return [];
+    })();
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center">
-                                <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
-                                </Link>
-                            </div>
-
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                {user.role === 'buyer' && (
-                                    <>
-                                        <NavLink
-                                            href={route('markets.index')}
-                                            active={route().current('markets.index')}
-                                        >
-                                            Pilih Pasar
-                                        </NavLink>
-                                        <NavLink
-                                            href={route('orders.index')}
-                                            active={route().current('orders.index') || route().current('orders.show') || route().current('orders.create')}
-                                        >
-                                            Pesanan Saya
-                                        </NavLink>
-                                    </>
-                                )}
-                                {user.role === 'joki' && (
-                                    <>
-                                        <NavLink
-                                            href={route('joki.orders.index')}
-                                            active={route().current('joki.orders.index')}
-                                        >
-                                            Pesanan Tersedia
-                                        </NavLink>
-                                        <NavLink
-                                            href={route('joki.orders.assigned')}
-                                            active={route().current('joki.orders.assigned') || route().current('joki.orders.show')}
-                                        >
-                                            Pesanan Saya
-                                        </NavLink>
-                                        <NavLink
-                                            href={route('joki.checklists.index')}
-                                            active={route().current('joki.checklists.index') || route().current('joki.checklists.show')}
-                                        >
-                                            Master Checklist
-                                        </NavLink>
-                                    </>
-                                )}
-                                {user.role === 'admin' && (
-                                    <>
-                                        <NavLink
-                                            href={route('admin.orders.index')}
-                                            active={route().current('admin.orders.index') || route().current('admin.orders.show')}
-                                        >
-                                            Semua Pesanan
-                                        </NavLink>
-                                        <NavLink
-                                            href={route('admin.checklists.index')}
-                                            active={route().current('admin.checklists.index') || route().current('admin.checklists.show')}
-                                        >
-                                            Master Checklist
-                                        </NavLink>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            <div className="relative ms-3">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {user.name} ({user.role})
-
-                                                <svg
-                                                    className="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
-
-                                    <Dropdown.Content>
-                                        <Dropdown.Link
-                                            href={route('profile.edit')}
-                                        >
-                                            Profile
-                                        </Dropdown.Link>
-                                        <Dropdown.Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <div className="-me-2 flex items-center sm:hidden">
-                            <button
-                                onClick={() =>
-                                    setShowingNavigationDropdown(
-                                        (previousState) => !previousState,
-                                    )
-                                }
-                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    className="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        className={
-                                            !showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        className={
-                                            showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--pa-background)', color: 'var(--pa-on-surface)' }}>
+            {/* Desktop Sidebar */}
+            <nav className="pa-sidebar">
+                <div className="pa-sidebar-brand">
+                    <img src="/PasarAntar.png" alt="Pasar Antar" style={{ height: 36 }} />
+                    <div>
+                        <div className="pa-sidebar-brand-title">Pasar Antar</div>
+                        <div className="pa-sidebar-brand-subtitle">Market Delivery Hub</div>
                     </div>
                 </div>
 
-                <div
-                    className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
-                    }
-                >
-                    <div className="space-y-1 pb-3 pt-2">
-                        {user.role === 'buyer' && (
-                            <>
-                                <ResponsiveNavLink
-                                    href={route('markets.index')}
-                                    active={route().current('markets.index')}
-                                >
-                                    Pilih Pasar
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('orders.index')}
-                                    active={route().current('orders.index')}
-                                >
-                                    Pesanan Saya
-                                </ResponsiveNavLink>
-                            </>
-                        )}
-                        {user.role === 'joki' && (
-                            <>
-                                <ResponsiveNavLink
-                                    href={route('joki.orders.index')}
-                                    active={route().current('joki.orders.index')}
-                                >
-                                    Pesanan Tersedia
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('joki.orders.assigned')}
-                                    active={route().current('joki.orders.assigned')}
-                                >
-                                    Pesanan Saya
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('joki.checklists.index')}
-                                    active={route().current('joki.checklists.index')}
-                                >
-                                    Master Checklist
-                                </ResponsiveNavLink>
-                            </>
-                        )}
-                        {user.role === 'admin' && (
-                            <>
-                                <ResponsiveNavLink
-                                    href={route('admin.orders.index')}
-                                    active={route().current('admin.orders.index')}
-                                >
-                                    Semua Pesanan
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('admin.checklists.index')}
-                                    active={route().current('admin.checklists.index')}
-                                >
-                                    Master Checklist
-                                </ResponsiveNavLink>
-                            </>
-                        )}
-                    </div>
+                <div className="flex-1 flex flex-col gap-1 mt-4">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`pa-nav-item ${item.active ? 'active' : ''}`}
+                        >
+                            <span className={`material-symbols-outlined ${item.active ? 'icon-fill' : ''}`}>{item.icon}</span>
+                            <span className="pa-button-text">{item.label}</span>
+                        </Link>
+                    ))}
 
-                    <div className="border-t border-gray-200 pb-1 pt-4">
-                        <div className="px-4">
-                            <div className="text-base font-medium text-gray-800">
-                                {user.name}
-                            </div>
-                            <div className="text-sm font-medium text-gray-500">
-                                {user.email}
-                            </div>
-                        </div>
-
-                        <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>
-                                Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                method="post"
-                                href={route('logout')}
-                                as="button"
-                            >
-                                Log Out
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
+                    <Link
+                        href={route('profile.edit')}
+                        className={`pa-nav-item mt-auto ${isProfile ? 'active' : ''}`}
+                    >
+                        <span className="material-symbols-outlined">settings</span>
+                        <span className="pa-button-text">Pengaturan</span>
+                    </Link>
                 </div>
             </nav>
 
-            {header && (
-                <header className="bg-white shadow">
-                    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        {header}
+            {/* Top Header Bar */}
+            <header className="pa-topbar">
+                {/* Mobile: Logo */}
+                <div className="flex items-center gap-3 md:hidden">
+                    <img src="/PasarAntar.png" alt="Pasar Antar" style={{ height: 28 }} />
+                    <span style={{ color: 'var(--pa-primary)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.01em' }}>
+                        Pasar Antar
+                    </span>
+                </div>
+
+                {/* Desktop: spacer (logo is in sidebar) */}
+                <div className="hidden md:block flex-1" />
+
+                {/* Right: Actions */}
+                <div className="flex items-center gap-2">
+                    <button
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-colors relative"
+                        style={{ color: 'var(--pa-text-muted)' }}
+                    >
+                        <span className="material-symbols-outlined">notifications</span>
+                    </button>
+
+                    <div className="hidden sm:block relative">
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium leading-4 transition duration-150 ease-in-out"
+                                    style={{
+                                        borderRadius: 'var(--pa-radius-input)',
+                                        border: '1px solid var(--pa-outline-variant)',
+                                        background: 'var(--pa-surface-container-lowest)',
+                                        color: 'var(--pa-text-main)',
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--pa-primary)' }}>account_circle</span>
+                                    <span style={{ fontWeight: 600 }}>{user.name}</span>
+                                    <span
+                                        style={{
+                                            fontSize: 10,
+                                            padding: '2px 6px',
+                                            backgroundColor: 'var(--pa-surface-container)',
+                                            borderRadius: 4,
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            color: 'var(--pa-text-muted)',
+                                        }}
+                                    >
+                                        {user.role}
+                                    </span>
+                                    <svg className="h-4 w-4" style={{ color: 'var(--pa-text-muted)' }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </Dropdown.Trigger>
+                            <Dropdown.Content>
+                                <Dropdown.Link href={route('profile.edit')}>Profil</Dropdown.Link>
+                                <Dropdown.Link href={route('logout')} method="post" as="button">Log Out</Dropdown.Link>
+                            </Dropdown.Content>
+                        </Dropdown>
                     </div>
-                </header>
+
+                    {/* Mobile profile icon */}
+                    <Link
+                        href={route('profile.edit')}
+                        className="sm:hidden w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+                        style={{ color: isProfile ? 'var(--pa-primary)' : 'var(--pa-text-muted)' }}
+                    >
+                        <span className="material-symbols-outlined">account_circle</span>
+                    </Link>
+                </div>
+            </header>
+
+            {/* Page Header (if provided) */}
+            {header && (
+                <div className="pa-main" style={{ paddingBottom: 0, minHeight: 'auto' }}>
+                    <div className="pa-main-inner">{header}</div>
+                </div>
             )}
 
-            <main>{children}</main>
+            {/* Main Content */}
+            <main className="pa-main" style={header ? { paddingTop: 0 } : undefined}>
+                <div className="pa-main-inner">
+                    {children}
+                </div>
+            </main>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="pa-bottom-nav">
+                {navItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`pa-bottom-nav-item ${item.active ? 'active' : ''}`}
+                    >
+                        <span className={`material-symbols-outlined ${item.active ? 'icon-fill' : ''}`}>{item.icon}</span>
+                        <span className="pa-nav-label">{item.label}</span>
+                    </Link>
+                ))}
+                <Link
+                    href={route('profile.edit')}
+                    className={`pa-bottom-nav-item ${isProfile ? 'active' : ''}`}
+                >
+                    <span className="material-symbols-outlined">person</span>
+                    <span className="pa-nav-label">Profil</span>
+                </Link>
+            </nav>
         </div>
     );
 }

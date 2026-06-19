@@ -4,40 +4,22 @@ interface StatusBadgeProps {
     status: string;
 }
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
-    let label = status;
-    let className = 'pa-badge-waiting';
+const statusConfig: Record<string, { label: string; badgeClass: string; icon: string }> = {
+    WAITING_FOR_JOKI: { label: 'Menunggu Joki', badgeClass: 'pa-badge-waiting', icon: 'schedule' },
+    ASSIGNED: { label: 'Diterima Joki', badgeClass: 'pa-badge-assigned', icon: 'person_check' },
+    SHOPPING: { label: 'Sedang Belanja', badgeClass: 'pa-badge-shopping', icon: 'storefront' },
+    DELIVERING: { label: 'Dalam Pengiriman', badgeClass: 'pa-badge-delivering', icon: 'local_shipping' },
+    COMPLETED: { label: 'Selesai', badgeClass: 'pa-badge-completed', icon: 'check_circle' },
+    CANCELLED: { label: 'Dibatalkan', badgeClass: 'pa-badge-cancelled', icon: 'cancel' },
+};
 
-    switch (status) {
-        case 'WAITING_FOR_JOKI':
-            label = 'Menunggu Joki';
-            className = 'pa-badge-waiting';
-            break;
-        case 'ASSIGNED':
-            label = 'Diterima Joki';
-            className = 'pa-badge-assigned';
-            break;
-        case 'SHOPPING':
-            label = 'Sedang Belanja';
-            className = 'pa-badge-shopping';
-            break;
-        case 'DELIVERING':
-            label = 'Dalam Pengiriman';
-            className = 'pa-badge-delivering';
-            break;
-        case 'COMPLETED':
-            label = 'Selesai';
-            className = 'pa-badge-completed';
-            break;
-        case 'CANCELLED':
-            label = 'Dibatalkan';
-            className = 'pa-badge-cancelled';
-            break;
-    }
+export default function StatusBadge({ status }: StatusBadgeProps) {
+    const config = statusConfig[status] || { label: status, badgeClass: 'pa-badge-waiting', icon: 'help' };
 
     return (
-        <span className={`pa-badge ${className}`}>
-            {label}
+        <span className={`pa-badge ${config.badgeClass}`}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{config.icon}</span>
+            {config.label}
         </span>
     );
 }

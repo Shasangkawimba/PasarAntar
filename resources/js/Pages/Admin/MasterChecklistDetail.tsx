@@ -2,196 +2,161 @@ import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-}
+interface User { id: number; name: string; email: string; }
+interface Market { id: number; name: string; address: string; }
+interface ChecklistItem { id: number; item_name: string; total_quantity: number; }
+interface Order { id: number; order_number: string; estimated_amount: number; buyer: User; }
+interface Checklist { id: number; status: string; market: Market; joki: User | null; items: ChecklistItem[]; orders: Order[]; }
 
-interface Market {
-    id: number;
-    name: string;
-    address: string;
-}
-
-interface ChecklistItem {
-    id: number;
-    item_name: string;
-    total_quantity: number;
-}
-
-interface Order {
-    id: number;
-    order_number: string;
-    estimated_amount: number;
-    buyer: User;
-}
-
-interface Checklist {
-    id: number;
-    status: string;
-    market: Market;
-    joki: User | null;
-    items: ChecklistItem[];
-    orders: Order[];
-}
-
-interface MasterChecklistDetailProps {
-    checklist: Checklist;
-}
-
-export default function MasterChecklistDetail({ checklist }: MasterChecklistDetailProps) {
-    const formatRupiah = (value: number | null) => {
-        if (value === null) return '-';
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
+export default function MasterChecklistDetail({ checklist }: { checklist: Checklist }) {
+    const formatRupiah = (value: number | null) => value === null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'READY_TO_SHOP':
-                return { bg: '#e0f2fe', text: '#0369a1', label: 'SIAP BELANJA' };
-            case 'SHOPPING':
-                return { bg: '#f3e8ff', text: '#6b21a8', label: 'SEDANG BELANJA' };
-            case 'COMPLETED':
-                return { bg: '#d1fae5', text: '#059669', label: 'SELESAI' };
-            default:
-                return { bg: '#f3f4f6', text: '#4b5563', label: status };
+            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart' };
+            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run' };
+            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt' };
+            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending' };
         }
     };
 
     const statusInfo = getStatusStyle(checklist.status);
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                        Detail Master Checklist #MC-{checklist.id}
-                    </h2>
-                    <Link href={route('admin.checklists.index')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
-                        Kembali ke Daftar
-                    </Link>
-                </div>
-            }
-        >
-            <Head title={`Admin - Detail Master Checklist #MC-${checklist.id}`} />
+        <AuthenticatedLayout>
+            <Head title={`Admin - Master Checklist #MC-${checklist.id}`} />
 
-            <div className="pa-body">
-                <div className="pa-container">
-                    <div className="pa-detail-grid">
-                        {/* Left Column: Aggregated Items */}
-                        <div>
-                            <div className="pa-form-section">
-                                <div className="pa-flex-between pa-mb-4">
-                                    <div>
-                                        <div className="pa-subtitle">PASAR ASAL</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem' }}>{checklist.market.name}</h2>
-                                        <p className="pa-subtitle">{checklist.market.address}</p>
-                                    </div>
-                                    <span
-                                        style={{
-                                            display: 'inline-flex',
-                                            padding: '0.375rem 0.75rem',
-                                            borderRadius: '9999px',
-                                            fontSize: '0.8125rem',
-                                            fontWeight: 'bold',
-                                            backgroundColor: statusInfo.bg,
-                                            color: statusInfo.text,
-                                        }}
-                                    >
-                                        {statusInfo.label}
-                                    </span>
-                                </div>
-
-                                <div className="pa-mt-6">
-                                    <h3 className="pa-font-bold" style={{ fontSize: '1rem', borderBottom: '2px solid var(--pa-border)', paddingBottom: '0.5rem' }}>
-                                        Daftar Belanja Teragregasi (Total Kebutuhan)
-                                    </h3>
-
-                                    {checklist.items.length === 0 ? (
-                                        <p className="pa-subtitle pa-mt-4" style={{ fontStyle: 'italic' }}>Tidak ada item belanja teragregasi.</p>
-                                    ) : (
-                                        <div className="pa-table-container">
-                                            <table className="pa-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Nama Barang</th>
-                                                        <th>Total Kuantitas</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {checklist.items.map((item) => (
-                                                        <tr key={item.id}>
-                                                            <td className="pa-font-bold" style={{ fontSize: '1rem', color: 'var(--pa-text)' }}>
-                                                                {item.item_name}
-                                                            </td>
-                                                            <td style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'var(--pa-primary-dark)' }}>
-                                                                {item.total_quantity}x
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column: Grouped Orders & Joki Details */}
-                        <div>
-                            {/* Joki Assignment Card */}
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Joki Yang Bertugas</h3>
-                                {checklist.joki ? (
-                                    <div style={{ padding: '0.75rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
-                                        <div className="pa-font-bold">{checklist.joki.name}</div>
-                                        <div className="pa-subtitle">{checklist.joki.email}</div>
-                                    </div>
-                                ) : (
-                                    <p className="pa-subtitle" style={{ fontStyle: 'italic' }}>Belum ditugaskan ke joki</p>
-                                )}
-                            </div>
-
-                            {/* Linked Orders List */}
-                            <div className="pa-form-section pa-mt-4">
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Pesanan Terkait ({checklist.orders.length})</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    {checklist.orders.map((order) => (
-                                        <Link
-                                            key={order.id}
-                                            href={route('admin.orders.show', order.id)}
-                                            style={{
-                                                display: 'block',
-                                                padding: '0.75rem',
-                                                border: '1px solid var(--pa-border)',
-                                                borderRadius: '0.5rem',
-                                                textDecoration: 'none',
-                                                color: 'inherit',
-                                                backgroundColor: 'var(--pa-bg)'
-                                            }}
-                                            className="hover:border-emerald-500 transition-colors"
-                                        >
-                                            <div className="pa-flex-between">
-                                                <span className="pa-font-bold" style={{ color: 'var(--pa-primary-dark)' }}>{order.order_number}</span>
-                                                <span style={{ fontSize: '0.8125rem', color: 'var(--pa-text-muted)' }}>
-                                                    {formatRupiah(order.estimated_amount)}
-                                                </span>
-                                            </div>
-                                            <div className="pa-subtitle pa-mt-1" style={{ fontSize: '0.75rem' }}>
-                                                Buyer: {order.buyer.name}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Link href={route('admin.checklists.index')} className="text-[var(--pa-text-muted)] hover:text-[var(--pa-primary)] transition-colors flex items-center gap-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                            <span className="pa-body-sm font-semibold">Kembali ke Daftar Checklist</span>
+                        </Link>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="pa-headline-lg pa-headline-lg-mobile md:pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>Detail Master Checklist</h1>
+                        <span className="pa-mono pa-label-caps px-2 py-1 rounded" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                            #MC-{checklist.id}
+                        </span>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full pa-label-caps" style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{statusInfo.icon}</span>
+                            {statusInfo.label}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8">
+                {/* Left Column (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Market Info */}
+                    <section className="pa-bento-card-static p-6">
+                        <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-text-muted)', marginBottom: 12 }}>
+                            <span className="material-symbols-outlined text-sm">storefront</span>
+                            Pasar Tujuan Agregasi
+                        </span>
+                        <h3 className="pa-headline-md">{checklist.market.name}</h3>
+                        <p className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{checklist.market.address}</p>
+                    </section>
+
+                    {/* Aggregated Items */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="pa-headline-md flex items-center gap-2">
+                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>receipt_long</span>
+                                Bahan Belanja Teragregasi
+                            </h3>
+                            <span className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>
+                                {checklist.items.length} Item
+                            </span>
+                        </div>
+
+                        {checklist.items.length === 0 ? (
+                            <div className="text-center py-8">
+                                <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--pa-surface-variant)' }}>remove_shopping_cart</span>
+                                <p className="pa-body-sm mt-4" style={{ color: 'var(--pa-text-muted)' }}>Tidak ada item belanja teragregasi.</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {checklist.items.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--pa-surface)', border: '1px solid var(--pa-surface-variant)' }}>
+                                        <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>local_mall</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="pa-body-lg" style={{ fontWeight: 600, color: 'var(--pa-text-main)' }}>
+                                                {item.item_name}
+                                            </div>
+                                        </div>
+                                        <div className="pa-mono pa-headline-md shrink-0 py-1 px-3 rounded-lg" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-main)' }}>
+                                            {item.total_quantity}x
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                {/* Right Column (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Joki Assignment */}
+                    <section className="pa-bento-card-static p-6">
+                        <h3 className="pa-headline-md mb-4 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-status-assigned)' }}>two_wheeler</span>
+                            Joki Penanggung Jawab
+                        </h3>
+                        {checklist.joki ? (
+                            <div className="rounded-xl p-3 flex items-start gap-3" style={{ backgroundColor: 'var(--pa-surface-container-low)', border: '1px solid var(--pa-surface-variant)' }}>
+                                <span className="material-symbols-outlined mt-0.5" style={{ color: 'var(--pa-text-muted)' }}>person</span>
+                                <div>
+                                    <div className="pa-body-sm" style={{ fontWeight: 600, color: 'var(--pa-text-main)' }}>{checklist.joki.name}</div>
+                                    <div className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>{checklist.joki.email}</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                                    <span className="material-symbols-outlined">person_search</span>
+                                </div>
+                                <span className="pa-body-sm italic" style={{ color: 'var(--pa-text-muted)' }}>Belum ditugaskan ke joki</span>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Linked Orders */}
+                    <section className="pa-bento-card-static p-6">
+                        <h3 className="pa-headline-md mb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>link</span>
+                            Pesanan Terkait
+                        </h3>
+                        <p className="pa-body-sm mb-6" style={{ color: 'var(--pa-text-muted)' }}>
+                            Checklist ini menggabungkan belanjaan dari {checklist.orders.length} pesanan berikut:
+                        </p>
+                        
+                        <div className="flex flex-col gap-3">
+                            {checklist.orders.map((order) => (
+                                <Link 
+                                    key={order.id} 
+                                    href={route('admin.orders.show', order.id)}
+                                    className="p-4 rounded-xl flex items-center justify-between hover:border-[var(--pa-primary)] transition-colors"
+                                    style={{ border: '1px solid var(--pa-surface-variant)', backgroundColor: 'var(--pa-surface)' }}
+                                >
+                                    <div>
+                                        <div className="pa-mono pa-label-caps mb-1" style={{ color: 'var(--pa-primary)' }}>{order.order_number}</div>
+                                        <div className="pa-body-sm mb-1" style={{ color: 'var(--pa-text-main)', fontWeight: 600 }}>{order.buyer.name}</div>
+                                        <div className="pa-mono pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>{formatRupiah(order.estimated_amount)}</div>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--pa-surface-container)' }}>
+                                        <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-text-muted)' }}>arrow_forward</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
                 </div>
             </div>
         </AuthenticatedLayout>

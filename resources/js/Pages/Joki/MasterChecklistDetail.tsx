@@ -33,191 +33,150 @@ interface Checklist {
     orders: Order[];
 }
 
-interface MasterChecklistDetailProps {
-    checklist: Checklist;
-}
-
-export default function MasterChecklistDetail({ checklist }: MasterChecklistDetailProps) {
+export default function MasterChecklistDetail({ checklist }: { checklist: Checklist }) {
     const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
-    const handleCheckboxChange = (itemId: number) => {
-        setCheckedItems((prev) => ({
-            ...prev,
-            [itemId]: !prev[itemId],
-        }));
-    };
+    const handleCheckboxChange = (itemId: number) => setCheckedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'READY_TO_SHOP':
-                return { bg: '#e0f2fe', text: '#0369a1', label: 'SIAP BELANJA' };
-            case 'SHOPPING':
-                return { bg: '#f3e8ff', text: '#6b21a8', label: 'SEDANG BELANJA' };
-            case 'COMPLETED':
-                return { bg: '#d1fae5', text: '#059669', label: 'SELESAI' };
-            default:
-                return { bg: '#f3f4f6', text: '#4b5563', label: status };
+            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart' };
+            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run' };
+            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt' };
+            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending' };
         }
     };
 
     const statusInfo = getStatusStyle(checklist.status);
+    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                        Checklist Belanja #MC-{checklist.id}
-                    </h2>
-                    <Link href={route('joki.checklists.index')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
-                        Kembali
-                    </Link>
-                </div>
-            }
-        >
-            <Head title={`Checklist Belanja #MC-${checklist.id}`} />
+        <AuthenticatedLayout>
+            <Head title={`Master Checklist #MC-${checklist.id}`} />
 
-            <div className="pa-body">
-                <div className="pa-container">
-                    <div className="pa-detail-grid">
-                        {/* Kolom Kiri: Aggregated items with checkboxes */}
-                        <div>
-                            <div className="pa-form-section">
-                                <div className="pa-flex-between pa-mb-4">
-                                    <div>
-                                        <div className="pa-subtitle">PASAR TUJUAN</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem' }}>{checklist.market.name}</h2>
-                                        <p className="pa-subtitle">{checklist.market.address}</p>
-                                    </div>
-                                    <span
-                                        style={{
-                                            display: 'inline-flex',
-                                            padding: '0.375rem 0.75rem',
-                                            borderRadius: '9999px',
-                                            fontSize: '0.8125rem',
-                                            fontWeight: 'bold',
-                                            backgroundColor: statusInfo.bg,
-                                            color: statusInfo.text,
-                                        }}
-                                    >
-                                        {statusInfo.label}
-                                    </span>
-                                </div>
-
-                                <div className="pa-mt-6">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem', borderBottom: '2px solid var(--pa-border)', paddingBottom: '0.5rem' }}>
-                                        Daftar Barang Gabungan (Checklist Belanja Joki)
-                                    </h3>
-
-                                    {checklist.items.length === 0 ? (
-                                        <p className="pa-subtitle" style={{ fontStyle: 'italic' }}>Tidak ada item belanja teragregasi.</p>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            {checklist.items.map((item) => {
-                                                const isChecked = !!checkedItems[item.id];
-                                                return (
-                                                    <div
-                                                        key={item.id}
-                                                        onClick={() => handleCheckboxChange(item.id)}
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            padding: '1rem',
-                                                            border: '1px solid',
-                                                            borderColor: isChecked ? 'var(--pa-primary)' : 'var(--pa-border)',
-                                                            borderRadius: '0.5rem',
-                                                            backgroundColor: isChecked ? 'var(--pa-primary-light)' : 'white',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s',
-                                                        }}
-                                                    >
-                                                        {/* Checkbox Icon */}
-                                                        <div
-                                                            style={{
-                                                                width: '24px',
-                                                                height: '24px',
-                                                                borderRadius: '0.375rem',
-                                                                border: '2px solid',
-                                                                borderColor: isChecked ? 'var(--pa-primary-dark)' : 'var(--pa-secondary)',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                marginRight: '1rem',
-                                                                backgroundColor: isChecked ? 'var(--pa-primary)' : 'transparent',
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
-                                                            }}
-                                                        >
-                                                            {isChecked && '✓'}
-                                                        </div>
-
-                                                        {/* Item Details */}
-                                                        <div style={{ flexGrow: 1 }}>
-                                                            <span
-                                                                style={{
-                                                                    fontSize: '1.0625rem',
-                                                                    fontWeight: isChecked ? 'bold' : '600',
-                                                                    textDecoration: isChecked ? 'line-through' : 'none',
-                                                                    color: isChecked ? 'var(--pa-secondary-dark)' : 'var(--pa-text)',
-                                                                }}
-                                                            >
-                                                                {item.item_name}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Quantity */}
-                                                        <div
-                                                            style={{
-                                                                fontSize: '1.25rem',
-                                                                fontWeight: '800',
-                                                                color: isChecked ? 'var(--pa-secondary-dark)' : 'var(--pa-primary-dark)',
-                                                                backgroundColor: isChecked ? '#e5e7eb' : 'var(--pa-primary-light)',
-                                                                padding: '0.25rem 0.75rem',
-                                                                borderRadius: '0.375rem',
-                                                            }}
-                                                        >
-                                                            {item.total_quantity}x
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Kolom Kanan: Linked Orders */}
-                        <div>
-                            <div className="pa-form-section">
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Rincian Pesanan Terkait ({checklist.orders.length})</h3>
-                                <p className="pa-subtitle pa-mb-4" style={{ fontSize: '0.75rem' }}>Master checklist ini menggabungkan belanjaan dari pesanan berikut:</p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    {checklist.orders.map((order) => (
-                                        <Link
-                                            key={order.id}
-                                            href={route('joki.orders.show', order.id)}
-                                            style={{
-                                                display: 'block',
-                                                padding: '0.75rem',
-                                                border: '1px solid var(--pa-border)',
-                                                borderRadius: '0.5rem',
-                                                textDecoration: 'none',
-                                                color: 'inherit',
-                                                backgroundColor: 'var(--pa-bg)',
-                                            }}
-                                            className="hover:border-emerald-500 transition-colors"
-                                        >
-                                            <div className="pa-font-bold" style={{ color: 'var(--pa-primary-dark)' }}>{order.order_number}</div>
-                                            <div className="pa-subtitle pa-mt-1" style={{ fontSize: '0.75rem' }}>
-                                                Buyer: {order.buyer.name}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Link href={route('joki.checklists.index')} className="text-[var(--pa-text-muted)] hover:text-[var(--pa-primary)] transition-colors flex items-center gap-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                            <span className="pa-body-sm font-semibold">Kembali ke Daftar Checklist</span>
+                        </Link>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="pa-headline-lg pa-headline-lg-mobile md:pa-headline-lg" style={{ color: 'var(--pa-text-main)' }}>Master Checklist</h1>
+                        <span className="pa-mono pa-label-caps px-2 py-1 rounded" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-muted)' }}>
+                            #MC-{checklist.id}
+                        </span>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full pa-label-caps" style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{statusInfo.icon}</span>
+                            {checklist.status.replace(/_/g, ' ')}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8">
+                {/* Left Column (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Market Info */}
+                    <section className="pa-bento-card-static p-6">
+                        <span className="pa-label-caps flex items-center gap-1" style={{ color: 'var(--pa-text-muted)', marginBottom: 12 }}>
+                            <span className="material-symbols-outlined text-sm">storefront</span>
+                            Pasar Tujuan Agregasi
+                        </span>
+                        <h3 className="pa-headline-md">{checklist.market.name}</h3>
+                        <p className="pa-body-sm mt-1" style={{ color: 'var(--pa-text-muted)' }}>{checklist.market.address}</p>
+                    </section>
+
+                    {/* Interactive Checklist */}
+                    <section className="pa-bento-card-static p-6 md:p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="pa-headline-md flex items-center gap-2">
+                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>checklist</span>
+                                Item Gabungan
+                            </h3>
+                            <span className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>
+                                {checkedCount}/{checklist.items.length} Terkumpul
+                            </span>
+                        </div>
+
+                        {checklist.items.length === 0 ? (
+                            <div className="text-center py-8">
+                                <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--pa-surface-variant)' }}>remove_shopping_cart</span>
+                                <p className="pa-body-sm mt-4" style={{ color: 'var(--pa-text-muted)' }}>Tidak ada item belanja teragregasi.</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {checklist.items.map((item) => {
+                                    const isChecked = !!checkedItems[item.id];
+                                    return (
+                                        <div 
+                                            key={item.id} 
+                                            onClick={() => handleCheckboxChange(item.id)}
+                                            className="flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-colors"
+                                            style={{ 
+                                                backgroundColor: isChecked ? 'rgba(16,185,129,0.05)' : 'var(--pa-surface)', 
+                                                border: `1px solid ${isChecked ? 'rgba(16,185,129,0.2)' : 'var(--pa-surface-variant)'}`
+                                            }}
+                                        >
+                                            <div 
+                                                className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors"
+                                                style={{ 
+                                                    backgroundColor: isChecked ? 'var(--pa-status-completed)' : 'transparent',
+                                                    border: `2px solid ${isChecked ? 'var(--pa-status-completed)' : 'var(--pa-outline)'}`
+                                                }}
+                                            >
+                                                {isChecked && <span className="material-symbols-outlined text-white" style={{ fontSize: 16 }}>check</span>}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="pa-body-lg" style={{ fontWeight: 600, color: isChecked ? 'var(--pa-text-muted)' : 'var(--pa-text-main)', textDecoration: isChecked ? 'line-through' : 'none' }}>
+                                                    {item.item_name}
+                                                </div>
+                                            </div>
+                                            <div className="pa-mono pa-headline-md shrink-0 py-1 px-3 rounded-lg" style={{ backgroundColor: 'var(--pa-surface-variant)', color: 'var(--pa-text-main)' }}>
+                                                {item.total_quantity}x
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                {/* Right Column (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-5 md:gap-8">
+                    
+                    {/* Linked Orders */}
+                    <section className="pa-bento-card-static p-6">
+                        <h3 className="pa-headline-md mb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--pa-primary)' }}>link</span>
+                            Pesanan Terkait
+                        </h3>
+                        <p className="pa-body-sm mb-6" style={{ color: 'var(--pa-text-muted)' }}>
+                            Checklist ini menggabungkan belanjaan dari {checklist.orders.length} pesanan berikut:
+                        </p>
+                        
+                        <div className="flex flex-col gap-3">
+                            {checklist.orders.map((order) => (
+                                <Link 
+                                    key={order.id} 
+                                    href={route('joki.orders.show', order.id)}
+                                    className="p-4 rounded-xl flex items-center justify-between hover:border-[var(--pa-primary)] transition-colors"
+                                    style={{ border: '1px solid var(--pa-surface-variant)', backgroundColor: 'var(--pa-surface)' }}
+                                >
+                                    <div>
+                                        <div className="pa-mono pa-label-caps mb-1" style={{ color: 'var(--pa-primary)' }}>{order.order_number}</div>
+                                        <div className="pa-body-sm" style={{ color: 'var(--pa-text-main)', fontWeight: 600 }}>{order.buyer.name}</div>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--pa-surface-container)' }}>
+                                        <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-text-muted)' }}>arrow_forward</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
                 </div>
             </div>
         </AuthenticatedLayout>

@@ -128,7 +128,8 @@ class OrderController extends Controller
             return Order::with(['buyer', 'market'])
                 ->where('status', 'WAITING_FOR_JOKI')
                 ->latest()
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return Inertia::render('Joki/AvailableOrders', [

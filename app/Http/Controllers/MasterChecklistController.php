@@ -23,7 +23,8 @@ class MasterChecklistController extends Controller
             return MasterChecklist::with(['market', 'joki'])
                 ->withCount('orders')
                 ->latest()
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return Inertia::render('Admin/MasterChecklistList', [
@@ -58,7 +59,8 @@ class MasterChecklistController extends Controller
                 ->withCount('orders')
                 ->where('assigned_joki_id', $jokiId)
                 ->latest()
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return Inertia::render('Joki/MasterChecklistList', [
