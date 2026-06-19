@@ -23,6 +23,8 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'role' => 'buyer',
+            'phone_number' => '081234567890',
         ]);
 
         $this->assertAuthenticated();

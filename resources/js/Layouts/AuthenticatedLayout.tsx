@@ -27,12 +27,38 @@ export default function Authenticated({
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
+                                {user.role === 'buyer' && (
+                                    <>
+                                        <NavLink
+                                            href={route('markets.index')}
+                                            active={route().current('markets.index')}
+                                        >
+                                            Pilih Pasar
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('orders.index')}
+                                            active={route().current('orders.index') || route().current('orders.show') || route().current('orders.create')}
+                                        >
+                                            Pesanan Saya
+                                        </NavLink>
+                                    </>
+                                )}
+                                {user.role === 'joki' && (
+                                    <NavLink
+                                        href={route('joki.orders.index')}
+                                        active={route().current('joki.orders.index')}
+                                    >
+                                        Pesanan Tersedia
+                                    </NavLink>
+                                )}
+                                {user.role === 'admin' && (
+                                    <NavLink
+                                        href={route('admin.orders.index')}
+                                        active={route().current('admin.orders.index') || route().current('admin.orders.show')}
+                                    >
+                                        Semua Pesanan
+                                    </NavLink>
+                                )}
                             </div>
                         </div>
 
@@ -45,7 +71,7 @@ export default function Authenticated({
                                                 type="button"
                                                 className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
                                             >
-                                                {user.name}
+                                                {user.name} ({user.role})
 
                                                 <svg
                                                     className="-me-0.5 ms-2 h-4 w-4"
@@ -131,12 +157,38 @@ export default function Authenticated({
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        {user.role === 'buyer' && (
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('markets.index')}
+                                    active={route().current('markets.index')}
+                                >
+                                    Pilih Pasar
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('orders.index')}
+                                    active={route().current('orders.index')}
+                                >
+                                    Pesanan Saya
+                                </ResponsiveNavLink>
+                            </>
+                        )}
+                        {user.role === 'joki' && (
+                            <ResponsiveNavLink
+                                href={route('joki.orders.index')}
+                                active={route().current('joki.orders.index')}
+                            >
+                                Pesanan Tersedia
+                            </ResponsiveNavLink>
+                        )}
+                        {user.role === 'admin' && (
+                            <ResponsiveNavLink
+                                href={route('admin.orders.index')}
+                                active={route().current('admin.orders.index')}
+                            >
+                                Semua Pesanan
+                            </ResponsiveNavLink>
+                        )}
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">

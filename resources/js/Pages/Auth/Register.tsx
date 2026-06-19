@@ -12,6 +12,8 @@ export default function Register() {
         email: '',
         password: '',
         password_confirmation: '',
+        role: 'buyer',
+        phone_number: '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -59,6 +61,41 @@ export default function Register() {
                     />
 
                     <InputError message={errors.email} className="mt-2" />
+                </div>
+
+                <div className="mt-4">
+                    <InputLabel htmlFor="role" value="Daftar Sebagai" />
+
+                    <select
+                        id="role"
+                        name="role"
+                        value={data.role}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        onChange={(e) => setData('role', e.target.value)}
+                        required
+                    >
+                        <option value="buyer">Pembeli (Buyer)</option>
+                        <option value="joki">Joki Pasar</option>
+                    </select>
+
+                    <InputError message={errors.role} className="mt-2" />
+                </div>
+
+                <div className="mt-4">
+                    <InputLabel htmlFor="phone_number" value="Nomor Telepon" />
+
+                    <TextInput
+                        id="phone_number"
+                        type="text"
+                        name="phone_number"
+                        value={data.phone_number}
+                        className="mt-1 block w-full"
+                        placeholder="Contoh: 081234567890"
+                        onChange={(e) => setData('phone_number', e.target.value)}
+                        required
+                    />
+
+                    <InputError message={errors.phone_number} className="mt-2" />
                 </div>
 
                 <div className="mt-4">
