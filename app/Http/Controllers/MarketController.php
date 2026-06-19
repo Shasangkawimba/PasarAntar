@@ -14,7 +14,9 @@ class MarketController extends Controller
      */
     public function index(Request $request): Response
     {
-        $markets = Market::where('is_active', true)->get();
+        $markets = \Illuminate\Support\Facades\Cache::remember('markets:active', now()->addHours(24), function () {
+            return Market::where('is_active', true)->get();
+        });
 
         return Inertia::render('Buyer/MarketList', [
             'markets' => $markets,

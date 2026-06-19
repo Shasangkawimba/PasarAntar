@@ -19,10 +19,12 @@ class MasterChecklistController extends Controller
     {
         Gate::authorize('generate', MasterChecklist::class);
 
-        $checklists = MasterChecklist::with(['market', 'joki'])
-            ->withCount('orders')
-            ->latest()
-            ->get();
+        $checklists = \Illuminate\Support\Facades\Cache::remember('checklists:admin', now()->addHours(1), function () {
+            return MasterChecklist::with(['market', 'joki'])
+                ->withCount('orders')
+                ->latest()
+                ->get();
+        });
 
         return Inertia::render('Admin/MasterChecklistList', [
             'checklists' => $checklists,
@@ -50,11 +52,14 @@ class MasterChecklistController extends Controller
     {
         Gate::authorize('viewAny', MasterChecklist::class);
 
-        $checklists = MasterChecklist::with(['market'])
-            ->withCount('orders')
-            ->where('assigned_joki_id', $request->user()->id)
-            ->latest()
-            ->get();
+        $jokiId = $request->user()->id;
+        $checklists = \Illuminate\Support\Facades\Cache::remember("checklists:joki:{$jokiId}", now()->addHours(1), function () use ($jokiId) {
+            return MasterChecklist::with(['market'])
+                ->withCount('orders')
+                ->where('assigned_joki_id', $jokiId)
+                ->latest()
+                ->get();
+        });
 
         return Inertia::render('Joki/MasterChecklistList', [
             'checklists' => $checklists,

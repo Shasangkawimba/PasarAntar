@@ -6,8 +6,12 @@ use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
+use App\Exceptions\InvalidStatusTransitionException;
+use App\Exceptions\UnauthorizedAssignmentException;
+use App\Exceptions\SettlementValidationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -61,6 +65,9 @@ class OrderService
                 ],
             ]);
 
+            // 4. Invalidate Caches
+            Cache::forget('orders:available');
+
             return $order;
         });
     }
@@ -72,14 +79,12 @@ class OrderService
      * @param  \App\Models\Order  $order
      * @return \App\Models\Order
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws InvalidStatusTransitionException
      */
     public function assignOrder(User $joki, Order $order): Order
     {
         if ($order->status !== 'WAITING_FOR_JOKI') {
-            throw ValidationException::withMessages([
-                'status' => 'Pesanan ini tidak dapat diambil karena statusnya bukan WAITING_FOR_JOKI.',
-            ]);
+            throw new InvalidStatusTransitionException('Pesanan ini tidak dapat diambil karena statusnya bukan WAITING_FOR_JOKI.');
         }
 
         return DB::transaction(function () use ($joki, $order) {
@@ -99,6 +104,17 @@ class OrderService
                 ],
             ]);
 
+            // Structured Contextual Log
+            Log::info('Order assigned to Joki.', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'joki_id' => $joki->id,
+                'joki_name' => $joki->name,
+            ]);
+
+            // Invalidate Caches
+            Cache::forget('orders:available');
+
             return $order->fresh();
         });
     }
@@ -111,34 +127,28 @@ class OrderService
      * @param  string  $newStatus
      * @return \App\Models\Order
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws InvalidStatusTransitionException
+     * @throws UnauthorizedAssignmentException
+     * @throws SettlementValidationException
      */
     public function updateStatus(User $joki, Order $order, string $newStatus): Order
     {
         $allowed = self::TRANSITIONS[$order->status] ?? [];
 
         if (! in_array($newStatus, $allowed)) {
-            throw ValidationException::withMessages([
-                'status' => "Transisi status dari {$order->status} ke {$newStatus} tidak diperbolehkan.",
-            ]);
+            throw new InvalidStatusTransitionException("Transisi status dari {$order->status} ke {$newStatus} tidak diperbolehkan.");
         }
 
         if ($order->assigned_joki_id !== $joki->id) {
-            throw ValidationException::withMessages([
-                'status' => 'Anda tidak memiliki akses untuk mengubah status pesanan ini.',
-            ]);
+            throw new UnauthorizedAssignmentException('Anda tidak memiliki akses untuk mengubah status pesanan ini.');
         }
 
         if ($newStatus === 'COMPLETED') {
             if (!$order->receipts()->exists()) {
-                throw ValidationException::withMessages([
-                    'status' => 'Pesanan tidak dapat diselesaikan karena nota belanja belum diunggah.',
-                ]);
+                throw new SettlementValidationException('Pesanan tidak dapat diselesaikan karena nota belanja belum diunggah.');
             }
             if ($order->actual_amount === null) {
-                throw ValidationException::withMessages([
-                    'status' => 'Pesanan tidak dapat diselesaikan karena nominal riil belanja belum diisi.',
-                ]);
+                throw new SettlementValidationException('Pesanan tidak dapat diselesaikan karena nominal riil belanja belum diisi.');
             }
         }
 
@@ -160,8 +170,19 @@ class OrderService
                 ],
             ]);
 
+            // Structured Contextual Log
+            Log::info('Order status updated.', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'joki_id' => $joki->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+
+            // Invalidate Caches
+            Cache::forget('orders:available');
+
             return $order->fresh();
         });
     }
 }
-

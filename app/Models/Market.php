@@ -12,6 +12,15 @@ class Market extends Model
     use HasFactory;
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn () => \Illuminate\Support\Facades\Cache::forget('markets:active'));
+        static::deleted(fn () => \Illuminate\Support\Facades\Cache::forget('markets:active'));
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

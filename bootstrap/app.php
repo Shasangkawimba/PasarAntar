@@ -25,4 +25,32 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        $exceptions->render(function (\App\Exceptions\InvalidStatusTransitionException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+            return back()->withErrors(['status' => $e->getMessage()]);
+        });
+
+        $exceptions->render(function (\App\Exceptions\UnauthorizedAssignmentException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 403);
+            }
+            return abort(403, $e->getMessage());
+        });
+
+        $exceptions->render(function (\App\Exceptions\SettlementValidationException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+            return back()->withErrors(['status' => $e->getMessage()]);
+        });
+
+        $exceptions->render(function (\App\Exceptions\AggregationException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 500);
+            }
+            return back()->withErrors(['status' => $e->getMessage()]);
+        });
     })->create();

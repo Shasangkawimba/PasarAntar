@@ -124,10 +124,12 @@ class OrderController extends Controller
     {
         Gate::authorize('viewAny', Order::class);
 
-        $orders = Order::with(['buyer', 'market'])
-            ->where('status', 'WAITING_FOR_JOKI')
-            ->latest()
-            ->get();
+        $orders = \Illuminate\Support\Facades\Cache::remember('orders:available', now()->addMinutes(10), function () {
+            return Order::with(['buyer', 'market'])
+                ->where('status', 'WAITING_FOR_JOKI')
+                ->latest()
+                ->get();
+        });
 
         return Inertia::render('Joki/AvailableOrders', [
             'orders' => $orders,

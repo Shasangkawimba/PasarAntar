@@ -7,6 +7,8 @@ use App\Models\MasterChecklist;
 use App\Models\MasterChecklistItem;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class AggregationService
 {
@@ -104,6 +106,19 @@ class AggregationService
                             'total_items' => count($aggregatedItems),
                         ],
                     ]);
+
+                    // Structured Contextual Log
+                    Log::info('Master Checklist generated.', [
+                        'checklist_id' => $checklist->id,
+                        'market_id' => $checklist->market_id,
+                        'assigned_joki_id' => $checklist->assigned_joki_id,
+                        'total_orders' => $validOrders->count(),
+                        'total_items' => count($aggregatedItems),
+                    ]);
+
+                    // Invalidate Caches
+                    Cache::forget('checklists:admin');
+                    Cache::forget("checklists:joki:{$firstOrder->assigned_joki_id}");
 
                     $checklistsCount++;
                 }

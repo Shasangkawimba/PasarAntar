@@ -70,4 +70,28 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+Route::get('/health', function () {
+    try {
+        \DB::connection()->getPdo();
+        $dbStatus = 'OK';
+    } catch (\Exception $e) {
+        $dbStatus = 'FAILED: ' . $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\Redis::connection()->ping();
+        $redisStatus = 'OK';
+    } catch (\Exception $e) {
+        $redisStatus = 'FAILED: ' . $e->getMessage();
+    }
+
+    $statusCode = ($dbStatus === 'OK' && $redisStatus === 'OK') ? 200 : 500;
+
+    return response()->json([
+        'status' => $statusCode === 200 ? 'healthy' : 'unhealthy',
+        'database' => $dbStatus,
+        'redis' => $redisStatus,
+    ], $statusCode);
+});
+
 require __DIR__.'/auth.php';
