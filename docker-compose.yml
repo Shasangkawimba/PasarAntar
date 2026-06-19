@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pasar_antar_postgres
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-pasar_antar}
+      POSTGRES_USER: ${DB_USERNAME:-pasar_antar_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pasar_antar_password}
+    ports:
+      - "${FORWARD_DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - pasar_antar
+
+  redis:
+    image: redis:7-alpine
+    container_name: pasar_antar_redis
+    ports:
+      - "${FORWARD_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - pasar_antar
+
+networks:
+  pasar_antar:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
