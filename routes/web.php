@@ -16,6 +16,7 @@ Route::get('/', function () {
 
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\MasterChecklistController;
 use Illuminate\Http\Request;
 
 Route::get('/dashboard', function (Request $request) {
@@ -51,6 +52,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/orders', [OrderController::class, 'adminIndex'])->name('admin.orders.index');
         Route::get('/admin/orders/{order}', [OrderController::class, 'adminShow'])->name('admin.orders.show');
+        Route::get('/admin/checklists', [MasterChecklistController::class, 'adminIndex'])->name('admin.checklists.index');
+        Route::get('/admin/checklists/{checklist}', [MasterChecklistController::class, 'adminShow'])->name('admin.checklists.show');
+        Route::post('/admin/checklists/generate', [MasterChecklistController::class, 'triggerAggregation'])->name('admin.checklists.generate');
     });
 
     // Joki routes
@@ -61,6 +65,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/joki/orders/{order}/assign', [OrderController::class, 'assignOrder'])->name('joki.orders.assign');
         Route::post('/joki/orders/{order}/status', [OrderController::class, 'updateOrderStatus'])->name('joki.orders.status');
         Route::post('/joki/orders/{order}/settle', [OrderController::class, 'saveSettlement'])->name('joki.orders.settle');
+        Route::get('/joki/checklists', [MasterChecklistController::class, 'jokiIndex'])->name('joki.checklists.index');
+        Route::get('/joki/checklists/{checklist}', [MasterChecklistController::class, 'jokiShow'])->name('joki.checklists.show');
     });
 });
 

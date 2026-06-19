@@ -57,15 +57,29 @@ export default function Authenticated({
                                         >
                                             Pesanan Saya
                                         </NavLink>
+                                        <NavLink
+                                            href={route('joki.checklists.index')}
+                                            active={route().current('joki.checklists.index') || route().current('joki.checklists.show')}
+                                        >
+                                            Master Checklist
+                                        </NavLink>
                                     </>
                                 )}
                                 {user.role === 'admin' && (
-                                    <NavLink
-                                        href={route('admin.orders.index')}
-                                        active={route().current('admin.orders.index') || route().current('admin.orders.show')}
-                                    >
-                                        Semua Pesanan
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('admin.orders.index')}
+                                            active={route().current('admin.orders.index') || route().current('admin.orders.show')}
+                                        >
+                                            Semua Pesanan
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('admin.checklists.index')}
+                                            active={route().current('admin.checklists.index') || route().current('admin.checklists.show')}
+                                        >
+                                            Master Checklist
+                                        </NavLink>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -195,15 +209,29 @@ export default function Authenticated({
                                 >
                                     Pesanan Saya
                                 </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('joki.checklists.index')}
+                                    active={route().current('joki.checklists.index')}
+                                >
+                                    Master Checklist
+                                </ResponsiveNavLink>
                             </>
                         )}
                         {user.role === 'admin' && (
-                            <ResponsiveNavLink
-                                href={route('admin.orders.index')}
-                                active={route().current('admin.orders.index')}
-                            >
-                                Semua Pesanan
-                            </ResponsiveNavLink>
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('admin.orders.index')}
+                                    active={route().current('admin.orders.index')}
+                                >
+                                    Semua Pesanan
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('admin.checklists.index')}
+                                    active={route().current('admin.checklists.index')}
+                                >
+                                    Master Checklist
+                                </ResponsiveNavLink>
+                            </>
                         )}
                     </div>
 
