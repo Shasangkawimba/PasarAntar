@@ -44,12 +44,20 @@ export default function Authenticated({
                                     </>
                                 )}
                                 {user.role === 'joki' && (
-                                    <NavLink
-                                        href={route('joki.orders.index')}
-                                        active={route().current('joki.orders.index')}
-                                    >
-                                        Pesanan Tersedia
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('joki.orders.index')}
+                                            active={route().current('joki.orders.index')}
+                                        >
+                                            Pesanan Tersedia
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('joki.orders.assigned')}
+                                            active={route().current('joki.orders.assigned') || route().current('joki.orders.show')}
+                                        >
+                                            Pesanan Saya
+                                        </NavLink>
+                                    </>
                                 )}
                                 {user.role === 'admin' && (
                                     <NavLink
@@ -174,12 +182,20 @@ export default function Authenticated({
                             </>
                         )}
                         {user.role === 'joki' && (
-                            <ResponsiveNavLink
-                                href={route('joki.orders.index')}
-                                active={route().current('joki.orders.index')}
-                            >
-                                Pesanan Tersedia
-                            </ResponsiveNavLink>
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('joki.orders.index')}
+                                    active={route().current('joki.orders.index')}
+                                >
+                                    Pesanan Tersedia
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('joki.orders.assigned')}
+                                    active={route().current('joki.orders.assigned')}
+                                >
+                                    Pesanan Saya
+                                </ResponsiveNavLink>
+                            </>
                         )}
                         {user.role === 'admin' && (
                             <ResponsiveNavLink

@@ -1,6 +1,6 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 
 interface User {
@@ -48,6 +48,12 @@ export default function AvailableOrders({ orders }: AvailableOrdersProps) {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const handleAssign = (orderId: number) => {
+        if (confirm('Apakah Anda yakin ingin mengambil pesanan ini?')) {
+            router.post(route('joki.orders.assign', orderId));
+        }
     };
 
     return (
@@ -112,11 +118,11 @@ export default function AvailableOrders({ orders }: AvailableOrdersProps) {
                                     <div className="pa-mt-4">
                                         <button
                                             type="button"
-                                            disabled
-                                            className="pa-btn pa-btn-secondary"
-                                            style={{ width: '100%', cursor: 'not-allowed', opacity: 0.6 }}
+                                            onClick={() => handleAssign(order.id)}
+                                            className="pa-btn pa-btn-primary"
+                                            style={{ width: '100%' }}
                                         >
-                                            Ambil Pesanan (Fase Selanjutnya)
+                                            Ambil Pesanan
                                         </button>
                                     </div>
                                 </div>

@@ -32,6 +32,14 @@ interface Receipt {
     };
 }
 
+interface ActivityLogEntry {
+    id: number;
+    action: string;
+    metadata: Record<string, unknown>;
+    created_at: string;
+    user: User;
+}
+
 interface Order {
     id: number;
     order_number: string;
@@ -50,9 +58,10 @@ interface Order {
 
 interface OrderDetailProps {
     order: Order;
+    activityLogs: ActivityLogEntry[];
 }
 
-export default function OrderDetail({ order }: OrderDetailProps) {
+export default function OrderDetail({ order, activityLogs }: OrderDetailProps) {
     const formatRupiah = (value: number | null) => {
         if (value === null) return '-';
         return new Intl.NumberFormat('id-ID', {
@@ -71,6 +80,15 @@ export default function OrderDetail({ order }: OrderDetailProps) {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const formatAction = (action: string) => {
+        const labels: Record<string, string> = {
+            'ORDER_CREATED': 'Order Dibuat',
+            'ORDER_ASSIGNED': 'Order Diambil Joki',
+            'STATUS_CHANGED': 'Status Berubah',
+        };
+        return labels[action] || action;
     };
 
     return (
@@ -169,7 +187,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                             </div>
                         </div>
 
-                        {/* Kolom Kanan: Rincian Biaya & Settlement */}
+                        {/* Kolom Kanan: Rincian Biaya, Nota, Activity Log */}
                         <div>
                             {/* Panel Ringkasan Biaya */}
                             <div className="pa-form-section">
@@ -222,6 +240,29 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                     ))}
                                 </div>
                             )}
+
+                            {/* Activity Log */}
+                            {activityLogs.length > 0 && (
+                                <div className="pa-form-section pa-mt-4">
+                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Riwayat Aktivitas</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {activityLogs.map((log) => (
+                                            <div key={log.id} style={{ padding: '0.75rem', backgroundColor: 'var(--pa-secondary-light)', borderRadius: '0.375rem', fontSize: '0.8125rem' }}>
+                                                <div className="pa-flex-between">
+                                                    <span className="pa-font-bold">{formatAction(log.action)}</span>
+                                                    <span className="pa-subtitle" style={{ fontSize: '0.6875rem' }}>{formatDate(log.created_at)}</span>
+                                                </div>
+                                                <div className="pa-subtitle pa-mt-1">oleh: {log.user.name}</div>
+                                                {log.action === 'STATUS_CHANGED' && log.metadata && (
+                                                    <div className="pa-mt-1" style={{ fontSize: '0.75rem' }}>
+                                                        {String(log.metadata.old_status || '')} → {String(log.metadata.new_status || '')}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -229,3 +270,4 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         </AuthenticatedLayout>
     );
 }
+

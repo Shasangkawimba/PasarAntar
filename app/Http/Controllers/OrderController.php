@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderStoreRequest;
+use App\Models\ActivityLog;
 use App\Models\Market;
 use App\Models\Order;
 use App\Services\OrderService;
@@ -69,7 +70,7 @@ class OrderController extends Controller
     {
         Gate::authorize('view', $order);
 
-        $order->load(['market', 'items', 'receipts.uploader']);
+        $order->load(['market', 'items', 'receipts.uploader', 'joki']);
 
         return Inertia::render('Buyer/OrderDetail', [
             'order' => $order,
@@ -81,7 +82,6 @@ class OrderController extends Controller
      */
     public function adminIndex(Request $request): Response
     {
-        // Admin middleware handles authorization, but checking policy is good practice
         Gate::authorize('viewAny', Order::class);
 
         $orders = Order::with(['buyer', 'market'])
@@ -102,8 +102,14 @@ class OrderController extends Controller
 
         $order->load(['buyer', 'market', 'items', 'receipts.uploader', 'joki']);
 
+        $activityLogs = ActivityLog::where('metadata->order_id', $order->id)
+            ->with('user')
+            ->latest()
+            ->get();
+
         return Inertia::render('Admin/OrderDetail', [
             'order' => $order,
+            'activityLogs' => $activityLogs,
         ]);
     }
 
@@ -122,5 +128,64 @@ class OrderController extends Controller
         return Inertia::render('Joki/AvailableOrders', [
             'orders' => $orders,
         ]);
+    }
+
+    /**
+     * Display a listing of orders assigned to the authenticated Joki.
+     */
+    public function jokiAssignedOrders(Request $request): Response
+    {
+        $orders = Order::with(['buyer', 'market'])
+            ->where('assigned_joki_id', $request->user()->id)
+            ->latest()
+            ->get();
+
+        return Inertia::render('Joki/AssignedOrders', [
+            'orders' => $orders,
+        ]);
+    }
+
+    /**
+     * Display order workflow page for Joki.
+     */
+    public function jokiOrderWorkflow(Order $order): Response
+    {
+        Gate::authorize('updateStatus', $order);
+
+        $order->load(['buyer', 'market', 'items']);
+
+        return Inertia::render('Joki/OrderWorkflow', [
+            'order' => $order,
+        ]);
+    }
+
+    /**
+     * Assign an order to the authenticated Joki.
+     */
+    public function assignOrder(Order $order): RedirectResponse
+    {
+        Gate::authorize('assign', $order);
+
+        $this->orderService->assignOrder(request()->user(), $order);
+
+        return redirect()->route('joki.orders.assigned')
+            ->with('success', "Pesanan {$order->order_number} berhasil diambil.");
+    }
+
+    /**
+     * Update order status by the assigned Joki.
+     */
+    public function updateOrderStatus(Request $request, Order $order): RedirectResponse
+    {
+        Gate::authorize('updateStatus', $order);
+
+        $request->validate([
+            'status' => ['required', 'string'],
+        ]);
+
+        $this->orderService->updateStatus($request->user(), $order, $request->input('status'));
+
+        return redirect()->route('joki.orders.show', $order->id)
+            ->with('success', 'Status pesanan berhasil diperbarui.');
     }
 }

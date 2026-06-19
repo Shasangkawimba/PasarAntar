@@ -30,8 +30,9 @@ class OrderPolicy
         }
 
         if ($user->isJoki()) {
-            // In Phase 3, Jokis can only view orders waiting for a joki
-            return $order->status === 'WAITING_FOR_JOKI';
+            // Joki can view waiting orders or orders assigned to them
+            return $order->status === 'WAITING_FOR_JOKI'
+                || $order->assigned_joki_id === $user->id;
         }
 
         return false;
@@ -43,5 +44,21 @@ class OrderPolicy
     public function create(User $user): bool
     {
         return $user->isBuyer();
+    }
+
+    /**
+     * Determine whether the joki can assign (claim) an order.
+     */
+    public function assign(User $user, Order $order): bool
+    {
+        return $user->isJoki() && $order->status === 'WAITING_FOR_JOKI';
+    }
+
+    /**
+     * Determine whether the joki can update the order status.
+     */
+    public function updateStatus(User $user, Order $order): bool
+    {
+        return $user->isJoki() && $order->assigned_joki_id === $user->id;
     }
 }

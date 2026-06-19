@@ -7,9 +7,20 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
+    /**
+     * Allowed status transitions.
+     */
+    protected const TRANSITIONS = [
+        'WAITING_FOR_JOKI' => ['ASSIGNED', 'CANCELLED'],
+        'ASSIGNED'         => ['SHOPPING'],
+        'SHOPPING'         => ['DELIVERING'],
+        'DELIVERING'       => ['COMPLETED'],
+    ];
+
     /**
      * Create a new order with its items and log the activity.
      *
@@ -53,4 +64,91 @@ class OrderService
             return $order;
         });
     }
+
+    /**
+     * Assign an order to a joki.
+     *
+     * @param  \App\Models\User  $joki
+     * @param  \App\Models\Order  $order
+     * @return \App\Models\Order
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function assignOrder(User $joki, Order $order): Order
+    {
+        if ($order->status !== 'WAITING_FOR_JOKI') {
+            throw ValidationException::withMessages([
+                'status' => 'Pesanan ini tidak dapat diambil karena statusnya bukan WAITING_FOR_JOKI.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($joki, $order) {
+            $order->update([
+                'assigned_joki_id' => $joki->id,
+                'status' => 'ASSIGNED',
+            ]);
+
+            ActivityLog::create([
+                'user_id' => $joki->id,
+                'action' => 'ORDER_ASSIGNED',
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'old_status' => 'WAITING_FOR_JOKI',
+                    'new_status' => 'ASSIGNED',
+                ],
+            ]);
+
+            return $order->fresh();
+        });
+    }
+
+    /**
+     * Update order status with validated transition.
+     *
+     * @param  \App\Models\User  $joki
+     * @param  \App\Models\Order  $order
+     * @param  string  $newStatus
+     * @return \App\Models\Order
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function updateStatus(User $joki, Order $order, string $newStatus): Order
+    {
+        $allowed = self::TRANSITIONS[$order->status] ?? [];
+
+        if (! in_array($newStatus, $allowed)) {
+            throw ValidationException::withMessages([
+                'status' => "Transisi status dari {$order->status} ke {$newStatus} tidak diperbolehkan.",
+            ]);
+        }
+
+        if ($order->assigned_joki_id !== $joki->id) {
+            throw ValidationException::withMessages([
+                'status' => 'Anda tidak memiliki akses untuk mengubah status pesanan ini.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($joki, $order, $newStatus) {
+            $oldStatus = $order->status;
+
+            $order->update([
+                'status' => $newStatus,
+            ]);
+
+            ActivityLog::create([
+                'user_id' => $joki->id,
+                'action' => 'STATUS_CHANGED',
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                ],
+            ]);
+
+            return $order->fresh();
+        });
+    }
 }
+

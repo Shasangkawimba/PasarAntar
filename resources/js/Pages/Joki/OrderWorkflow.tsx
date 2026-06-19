@@ -1,8 +1,15 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import ProgressTimeline from '@/Components/ProgressTimeline';
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    phone_number: string | null;
+}
 
 interface Market {
     id: number;
@@ -17,34 +24,41 @@ interface OrderItem {
     notes: string | null;
 }
 
-interface Receipt {
-    id: number;
-    image_url: string;
-    uploader?: {
-        name: string;
-    };
-}
-
 interface Order {
     id: number;
     order_number: string;
     status: string;
     estimated_amount: number;
     actual_amount: number | null;
-    refund_amount: number | null;
-    additional_payment: number | null;
     created_at: string;
+    buyer: User;
     market: Market;
-    joki: { id: number; name: string; phone_number: string | null } | null;
     items: OrderItem[];
-    receipts: Receipt[];
 }
 
-interface OrderDetailProps {
+interface OrderWorkflowProps {
     order: Order;
 }
 
-export default function OrderDetail({ order }: OrderDetailProps) {
+const STATUS_ACTIONS: Record<string, { label: string; nextStatus: string; confirmMessage: string }> = {
+    ASSIGNED: {
+        label: 'Mulai Belanja',
+        nextStatus: 'SHOPPING',
+        confirmMessage: 'Mulai belanja untuk pesanan ini?',
+    },
+    SHOPPING: {
+        label: 'Antar Pesanan',
+        nextStatus: 'DELIVERING',
+        confirmMessage: 'Belanja selesai dan siap antar pesanan ini?',
+    },
+    DELIVERING: {
+        label: 'Selesaikan Pesanan',
+        nextStatus: 'COMPLETED',
+        confirmMessage: 'Pesanan sudah diterima oleh pembeli?',
+    },
+};
+
+export default function OrderWorkflow({ order }: OrderWorkflowProps) {
     const formatRupiah = (value: number | null) => {
         if (value === null) return '-';
         return new Intl.NumberFormat('id-ID', {
@@ -65,27 +79,38 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         });
     };
 
+    const action = STATUS_ACTIONS[order.status];
+
+    const handleStatusUpdate = () => {
+        if (!action) return;
+        if (confirm(action.confirmMessage)) {
+            router.post(route('joki.orders.status', order.id), {
+                status: action.nextStatus,
+            });
+        }
+    };
+
     return (
         <AuthenticatedLayout
             header={
                 <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                        Detail Pesanan {order.order_number}
+                        Workflow {order.order_number}
                     </h2>
-                    <Link href={route('orders.index')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
-                        Kembali ke Daftar
+                    <Link href={route('joki.orders.assigned')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
+                        Kembali
                     </Link>
                 </div>
             }
         >
-            <Head title={`Detail Pesanan ${order.order_number}`} />
+            <Head title={`Workflow ${order.order_number}`} />
 
             <div className="pa-body">
                 <div className="pa-container">
                     <div className="pa-detail-grid">
-                        {/* Kolom Kiri: Status, Timeline & Barang */}
+                        {/* Left Column: Status, Buyer Info, Timeline, Items */}
                         <div>
-                            {/* Card Status & Pasar */}
+                            {/* Status & Market Card */}
                             <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
                                 <div className="pa-flex-between">
                                     <div>
@@ -98,24 +123,24 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                 <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(order.created_at)}</p>
                             </div>
 
-                            {/* Joki Information */}
-                            {order.joki && (
-                                <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Joki Yang Bertugas</h3>
-                                    <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
-                                        <div className="pa-font-bold">{order.joki.name}</div>
-                                        <div className="pa-subtitle pa-mt-1">Telp: {order.joki.phone_number || '-'}</div>
-                                    </div>
+                            {/* Buyer Information */}
+                            <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
+                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Informasi Pembeli</h3>
+                                <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
+                                    <div className="pa-subtitle" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>PEMBELI (BUYER)</div>
+                                    <div className="pa-font-bold pa-mt-2">{order.buyer.name}</div>
+                                    <div className="pa-subtitle">{order.buyer.email}</div>
+                                    <div className="pa-subtitle pa-mt-1">Telp: {order.buyer.phone_number || '-'}</div>
                                 </div>
-                            )}
+                            </div>
 
                             {/* Progress Timeline */}
                             <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
-                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan Belanja</h3>
+                                <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan</h3>
                                 <ProgressTimeline currentStatus={order.status} />
                             </div>
 
-                            {/* Daftar Barang Belanjaan */}
+                            {/* Order Items */}
                             <div className="pa-form-section">
                                 <h3 className="pa-font-bold" style={{ fontSize: '1rem' }}>Daftar Belanjaan</h3>
                                 <div className="pa-table-container">
@@ -141,12 +166,12 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                             </div>
                         </div>
 
-                        {/* Kolom Kanan: Rincian Biaya & Settlement */}
+                        {/* Right Column: Cost Summary & Action */}
                         <div>
-                            {/* Panel Ringkasan Biaya */}
+                            {/* Cost Panel */}
                             <div className="pa-form-section">
                                 <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Rincian Biaya</h3>
-                                
+
                                 <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
                                     <span className="pa-subtitle">Estimasi Deposito</span>
                                     <span className="pa-font-bold">{formatRupiah(order.estimated_amount)}</span>
@@ -156,42 +181,30 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                     <span className="pa-subtitle">Biaya Riil Belanja</span>
                                     <span>{formatRupiah(order.actual_amount)}</span>
                                 </div>
-
-                                {order.status === 'COMPLETED' && (
-                                    <>
-                                        {order.refund_amount && order.refund_amount > 0 ? (
-                                            <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: 'var(--pa-primary-light)', color: 'var(--pa-primary-dark)' }}>
-                                                <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Uang Kembali (Refund)</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(order.refund_amount)}</span>
-                                            </div>
-                                        ) : null}
-
-                                        {order.additional_payment && order.additional_payment > 0 ? (
-                                            <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#fef3c7', color: '#92400e' }}>
-                                                <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Kekurangan Bayar</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(order.additional_payment)}</span>
-                                            </div>
-                                        ) : null}
-                                    </>
-                                )}
                             </div>
 
-                            {/* Bukti Nota Belanja */}
-                            {order.receipts.length > 0 && (
+                            {/* Action Button */}
+                            {action && (
                                 <div className="pa-form-section pa-mt-4">
-                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Nota Belanja Fisik</h3>
-                                    {order.receipts.map((receipt) => (
-                                        <div key={receipt.id} className="pa-mt-2">
-                                            <img 
-                                                src={receipt.image_url} 
-                                                alt="Nota Belanja" 
-                                                style={{ width: '100%', borderRadius: '0.5rem', border: '1px solid var(--pa-border)', maxHeight: '300px', objectFit: 'contain' }} 
-                                            />
-                                            {receipt.uploader && (
-                                                <p className="pa-subtitle pa-mt-2" style={{ fontSize: '0.75rem' }}>Diunggah oleh: {receipt.uploader.name}</p>
-                                            )}
-                                        </div>
-                                    ))}
+                                    <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Aksi Selanjutnya</h3>
+                                    <button
+                                        type="button"
+                                        onClick={handleStatusUpdate}
+                                        className="pa-btn pa-btn-primary"
+                                        style={{ width: '100%' }}
+                                    >
+                                        {action.label}
+                                    </button>
+                                </div>
+                            )}
+
+                            {order.status === 'COMPLETED' && (
+                                <div className="pa-form-section pa-mt-4" style={{ backgroundColor: 'var(--pa-primary-light)', border: '1px solid var(--pa-primary)' }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+                                        <h3 className="pa-font-bold" style={{ color: 'var(--pa-primary-dark)' }}>Pesanan Selesai</h3>
+                                        <p className="pa-subtitle pa-mt-2">Pesanan ini telah selesai dan diterima oleh pembeli.</p>
+                                    </div>
                                 </div>
                             )}
                         </div>

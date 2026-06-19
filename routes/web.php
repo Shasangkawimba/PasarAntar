@@ -56,6 +56,10 @@ Route::middleware('auth')->group(function () {
     // Joki routes
     Route::middleware('role:joki')->group(function () {
         Route::get('/joki/orders', [OrderController::class, 'jokiIndex'])->name('joki.orders.index');
+        Route::get('/joki/assigned', [OrderController::class, 'jokiAssignedOrders'])->name('joki.orders.assigned');
+        Route::get('/joki/orders/{order}', [OrderController::class, 'jokiOrderWorkflow'])->name('joki.orders.show');
+        Route::post('/joki/orders/{order}/assign', [OrderController::class, 'assignOrder'])->name('joki.orders.assign');
+        Route::post('/joki/orders/{order}/status', [OrderController::class, 'updateOrderStatus'])->name('joki.orders.status');
     });
 });
 
