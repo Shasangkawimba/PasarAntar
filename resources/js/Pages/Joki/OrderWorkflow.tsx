@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
@@ -70,13 +70,72 @@ const STATUS_ACTIONS: Record<string, { label: string; nextStatus: string; confir
 };
 
 export default function OrderWorkflow({ order }: OrderWorkflowProps) {
+    const [orderState, setOrderState] = useState<Order>(order);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        actual_amount: order.actual_amount !== null ? order.actual_amount.toString() : '',
+        actual_amount: orderState.actual_amount !== null ? orderState.actual_amount.toString() : '',
         receipt: null as File | null,
     });
+
+    useEffect(() => {
+        setOrderState(order);
+        setData('actual_amount', order.actual_amount !== null ? order.actual_amount.toString() : '');
+    }, [order]);
+
+    useEffect(() => {
+        if (window.Echo && window.Echo.connector.pusher) {
+            const connection = window.Echo.connector.pusher.connection;
+            setIsConnected(connection.state === 'connected');
+
+            const handleStateChange = (states: { current: string }) => {
+                setIsConnected(states.current === 'connected');
+            };
+
+            connection.bind('state_change', handleStateChange);
+
+            return () => {
+                connection.unbind('state_change', handleStateChange);
+            };
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!window.Echo) return;
+
+        const channel = window.Echo.private(`orders.${orderState.id}`);
+
+        const handleUpdate = (e: any) => {
+            setOrderState((prev) => {
+                const updated = {
+                    ...prev,
+                    status: e.status,
+                    actual_amount: e.actual_amount,
+                    refund_amount: e.refund_amount,
+                    additional_payment: e.additional_payment,
+                };
+                if (e.receipts) {
+                    updated.receipts = e.receipts;
+                }
+                return updated;
+            });
+            if (e.actual_amount !== null) {
+                setData('actual_amount', e.actual_amount.toString());
+            }
+        };
+
+        channel.listen('OrderAssigned', handleUpdate);
+        channel.listen('OrderStatusChanged', handleUpdate);
+        channel.listen('SettlementUpdated', handleUpdate);
+
+        return () => {
+            channel.stopListening('OrderAssigned');
+            channel.stopListening('OrderStatusChanged');
+            channel.stopListening('SettlementUpdated');
+        };
+    }, [orderState.id]);
 
     const formatRupiah = (value: number | null) => {
         if (value === null) return '-';
@@ -98,8 +157,8 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
         });
     };
 
-    const action = STATUS_ACTIONS[order.status];
-    const canComplete = order.receipts && order.receipts.length > 0 && order.actual_amount !== null;
+    const action = STATUS_ACTIONS[orderState.status];
+    const canComplete = orderState.receipts && orderState.receipts.length > 0 && orderState.actual_amount !== null;
 
     const handleStatusUpdate = () => {
         if (!action) return;
@@ -108,7 +167,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
             return;
         }
         if (confirm(action.confirmMessage)) {
-            router.post(route('joki.orders.status', order.id), {
+            router.post(route('joki.orders.status', orderState.id), {
                 status: action.nextStatus,
             });
         }
@@ -116,7 +175,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
 
     const handleSubmitSettlement = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('joki.orders.settle', order.id), {
+        post(route('joki.orders.settle', orderState.id), {
             forceFormData: true,
             onSuccess: () => {
                 setReceiptPreview(null);
@@ -126,7 +185,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
     };
 
     // Real-time calculations for frontend preview
-    const estimated = order.estimated_amount;
+    const estimated = orderState.estimated_amount;
     const actual = parseInt(data.actual_amount) || 0;
     let refund = 0;
     let additional = 0;
@@ -143,8 +202,17 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
         <AuthenticatedLayout
             header={
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                        Workflow {order.order_number}
+                    <h2 className="text-xl font-semibold leading-tight text-gray-800 flex items-center gap-3">
+                        Workflow {orderState.order_number}
+                        {isConnected ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="realtime-status-connected">
+                                ● Realtime Connected
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500" id="realtime-status-disconnected">
+                                ○ Realtime Disconnected
+                            </span>
+                        )}
                     </h2>
                     <Link href={route('joki.orders.assigned')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
                         Kembali
@@ -152,7 +220,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                 </div>
             }
         >
-            <Head title={`Workflow ${order.order_number}`} />
+            <Head title={`Workflow ${orderState.order_number}`} />
 
             <div className="pa-body">
                 <div className="pa-container">
@@ -164,12 +232,12 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                 <div className="pa-flex-between">
                                     <div>
                                         <div className="pa-subtitle">PASAR TUJUAN</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{order.market.name}</h2>
-                                        <p className="pa-subtitle">{order.market.address}</p>
+                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{orderState.market.name}</h2>
+                                        <p className="pa-subtitle">{orderState.market.address}</p>
                                     </div>
-                                    <StatusBadge status={order.status} />
+                                    <StatusBadge status={orderState.status} />
                                 </div>
-                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(order.created_at)}</p>
+                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(orderState.created_at)}</p>
                             </div>
 
                             {/* Buyer Information */}
@@ -177,16 +245,16 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                 <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Informasi Pembeli</h3>
                                 <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
                                     <div className="pa-subtitle" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>PEMBELI (BUYER)</div>
-                                    <div className="pa-font-bold pa-mt-2">{order.buyer.name}</div>
-                                    <div className="pa-subtitle">{order.buyer.email}</div>
-                                    <div className="pa-subtitle pa-mt-1">Telp: {order.buyer.phone_number || '-'}</div>
+                                    <div className="pa-font-bold pa-mt-2">{orderState.buyer.name}</div>
+                                    <div className="pa-subtitle">{orderState.buyer.email}</div>
+                                    <div className="pa-subtitle pa-mt-1">Telp: {orderState.buyer.phone_number || '-'}</div>
                                 </div>
                             </div>
 
                             {/* Progress Timeline */}
                             <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
                                 <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan</h3>
-                                <ProgressTimeline currentStatus={order.status} />
+                                <ProgressTimeline currentStatus={orderState.status} />
                             </div>
 
                             {/* Order Items */}
@@ -202,7 +270,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items.map((item) => (
+                                            {orderState.items.map((item) => (
                                                 <tr key={item.id}>
                                                     <td className="pa-font-bold">{item.product_name}</td>
                                                     <td>{item.quantity}x</td>
@@ -223,28 +291,28 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
 
                                 <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
                                     <span className="pa-subtitle">Estimasi Deposito</span>
-                                    <span className="pa-font-bold">{formatRupiah(order.estimated_amount)}</span>
+                                    <span className="pa-font-bold">{formatRupiah(estimated)}</span>
                                 </div>
 
                                 <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
                                     <span className="pa-subtitle">Biaya Riil Belanja</span>
-                                    <span className={order.actual_amount !== null ? 'pa-font-bold' : 'pa-subtitle'}>
-                                        {formatRupiah(order.actual_amount)}
+                                    <span className={orderState.actual_amount !== null ? 'pa-font-bold' : 'pa-subtitle'}>
+                                        {formatRupiah(orderState.actual_amount)}
                                     </span>
                                 </div>
 
-                                {order.actual_amount !== null && (
+                                {orderState.actual_amount !== null && (
                                     <>
-                                        {order.refund_amount !== null && order.refund_amount > 0 && (
+                                        {orderState.refund_amount !== null && orderState.refund_amount > 0 && (
                                             <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)', color: 'var(--pa-primary-dark)' }}>
                                                 <span className="pa-subtitle" style={{ color: 'var(--pa-primary-dark)' }}>Selisih Kembalian (Refund)</span>
-                                                <span className="pa-font-bold">{formatRupiah(order.refund_amount)}</span>
+                                                <span className="pa-font-bold">{formatRupiah(orderState.refund_amount)}</span>
                                             </div>
                                         )}
-                                        {order.additional_payment !== null && order.additional_payment > 0 && (
+                                        {orderState.additional_payment !== null && orderState.additional_payment > 0 && (
                                             <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)', color: 'var(--pa-danger)' }}>
                                                 <span className="pa-subtitle" style={{ color: 'var(--pa-danger)' }}>Kurang Bayar (Additional)</span>
-                                                <span className="pa-font-bold">{formatRupiah(order.additional_payment)}</span>
+                                                <span className="pa-font-bold">{formatRupiah(orderState.additional_payment)}</span>
                                             </div>
                                         )}
                                     </>
@@ -252,7 +320,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                             </div>
 
                             {/* Settlement Form (Only during SHOPPING or DELIVERING) */}
-                            {(order.status === 'SHOPPING' || order.status === 'DELIVERING') && (
+                            {(orderState.status === 'SHOPPING' || orderState.status === 'DELIVERING') && (
                                 <form onSubmit={handleSubmitSettlement} className="pa-form-section pa-mt-4">
                                     <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Penyelesaian Belanja</h3>
 
@@ -293,7 +361,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                                     setReceiptPreview(URL.createObjectURL(files[0]));
                                                 }
                                             }}
-                                            required={!order.receipts || order.receipts.length === 0}
+                                            required={!orderState.receipts || orderState.receipts.length === 0}
                                         />
                                         {errors.receipt && (
                                             <p className="pa-subtitle pa-mt-1" style={{ color: 'var(--pa-danger)' }}>{errors.receipt}</p>
@@ -315,11 +383,11 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                     )}
 
                                     {/* Existing Receipts Thumbnail */}
-                                    {order.receipts && order.receipts.length > 0 && (
+                                    {orderState.receipts && orderState.receipts.length > 0 && (
                                         <div className="pa-mb-4">
                                             <span className="pa-subtitle">Nota Terunggah:</span>
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                                                {order.receipts.map((r) => (
+                                                {orderState.receipts.map((r) => (
                                                     <img
                                                         key={r.id}
                                                         src={r.image_url}
@@ -401,7 +469,7 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                                 </div>
                             )}
 
-                            {order.status === 'COMPLETED' && (
+                            {orderState.status === 'COMPLETED' && (
                                 <div className="pa-form-section pa-mt-4" style={{ backgroundColor: 'var(--pa-primary-light)', border: '1px solid var(--pa-primary)' }}>
                                     <div style={{ textAlign: 'center' }}>
                                         <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
@@ -412,11 +480,11 @@ export default function OrderWorkflow({ order }: OrderWorkflowProps) {
                             )}
 
                             {/* Receipt Image Thumbnail (Read Only when COMPLETED) */}
-                            {order.status === 'COMPLETED' && order.receipts && order.receipts.length > 0 && (
+                            {orderState.status === 'COMPLETED' && orderState.receipts && orderState.receipts.length > 0 && (
                                 <div className="pa-form-section pa-mt-4">
                                     <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Nota Terlampir</h3>
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                        {order.receipts.map((r) => (
+                                        {orderState.receipts.map((r) => (
                                             <img
                                                 key={r.id}
                                                 src={r.image_url}

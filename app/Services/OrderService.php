@@ -87,13 +87,14 @@ class OrderService
             throw new InvalidStatusTransitionException('Pesanan ini tidak dapat diambil karena statusnya bukan WAITING_FOR_JOKI.');
         }
 
-        return DB::transaction(function () use ($joki, $order) {
+        $activityLog = null;
+        $updatedOrder = DB::transaction(function () use ($joki, $order, &$activityLog) {
             $order->update([
                 'assigned_joki_id' => $joki->id,
                 'status' => 'ASSIGNED',
             ]);
 
-            ActivityLog::create([
+            $activityLog = ActivityLog::create([
                 'user_id' => $joki->id,
                 'action' => 'ORDER_ASSIGNED',
                 'metadata' => [
@@ -117,6 +118,23 @@ class OrderService
 
             return $order->fresh();
         });
+
+        if ($activityLog) {
+            event(new \App\Events\OrderAssigned($updatedOrder, [
+                'id' => $activityLog->id,
+                'action' => $activityLog->action,
+                'metadata' => $activityLog->metadata,
+                'created_at' => $activityLog->created_at->toIso8601String(),
+                'user' => [
+                    'id' => $joki->id,
+                    'name' => $joki->name,
+                    'email' => $joki->email,
+                    'phone_number' => $joki->phone_number,
+                ],
+            ]));
+        }
+
+        return $updatedOrder;
     }
 
     /**
@@ -152,14 +170,15 @@ class OrderService
             }
         }
 
-        return DB::transaction(function () use ($joki, $order, $newStatus) {
+        $activityLog = null;
+        $updatedOrder = DB::transaction(function () use ($joki, $order, $newStatus, &$activityLog) {
             $oldStatus = $order->status;
 
             $order->update([
                 'status' => $newStatus,
             ]);
 
-            ActivityLog::create([
+            $activityLog = ActivityLog::create([
                 'user_id' => $joki->id,
                 'action' => 'STATUS_CHANGED',
                 'metadata' => [
@@ -184,5 +203,22 @@ class OrderService
 
             return $order->fresh();
         });
+
+        if ($activityLog) {
+            event(new \App\Events\OrderStatusChanged($updatedOrder, [
+                'id' => $activityLog->id,
+                'action' => $activityLog->action,
+                'metadata' => $activityLog->metadata,
+                'created_at' => $activityLog->created_at->toIso8601String(),
+                'user' => [
+                    'id' => $joki->id,
+                    'name' => $joki->name,
+                    'email' => $joki->email,
+                    'phone_number' => $joki->phone_number,
+                ],
+            ]));
+        }
+
+        return $updatedOrder;
     }
 }

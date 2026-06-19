@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
@@ -45,7 +45,69 @@ interface OrderDetailProps {
 }
 
 export default function OrderDetail({ order }: OrderDetailProps) {
+    const [orderState, setOrderState] = useState<Order>(order);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        setOrderState(order);
+    }, [order]);
+
+    useEffect(() => {
+        if (window.Echo && window.Echo.connector.pusher) {
+            const connection = window.Echo.connector.pusher.connection;
+            setIsConnected(connection.state === 'connected');
+
+            const handleStateChange = (states: { current: string }) => {
+                setIsConnected(states.current === 'connected');
+            };
+
+            connection.bind('state_change', handleStateChange);
+
+            return () => {
+                connection.unbind('state_change', handleStateChange);
+            };
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!window.Echo) return;
+
+        const channel = window.Echo.private(`orders.${orderState.id}`);
+
+        const handleUpdate = (e: any) => {
+            setOrderState((prev) => {
+                const updated = {
+                    ...prev,
+                    status: e.status,
+                    actual_amount: e.actual_amount,
+                    refund_amount: e.refund_amount,
+                    additional_payment: e.additional_payment,
+                };
+                if (e.assigned_joki_name) {
+                    updated.joki = {
+                        id: prev.joki?.id ?? 0,
+                        name: e.assigned_joki_name,
+                        phone_number: e.assigned_joki_phone ?? null,
+                    };
+                }
+                if (e.receipts) {
+                    updated.receipts = e.receipts;
+                }
+                return updated;
+            });
+        };
+
+        channel.listen('OrderAssigned', handleUpdate);
+        channel.listen('OrderStatusChanged', handleUpdate);
+        channel.listen('SettlementUpdated', handleUpdate);
+
+        return () => {
+            channel.stopListening('OrderAssigned');
+            channel.stopListening('OrderStatusChanged');
+            channel.stopListening('SettlementUpdated');
+        };
+    }, [orderState.id]);
 
     const formatRupiah = (value: number | null) => {
         if (value === null) return '-';
@@ -71,8 +133,17 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         <AuthenticatedLayout
             header={
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                        Detail Pesanan {order.order_number}
+                    <h2 className="text-xl font-semibold leading-tight text-gray-800 flex items-center gap-3">
+                        Detail Pesanan {orderState.order_number}
+                        {isConnected ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="realtime-status-connected">
+                                ● Realtime Connected
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500" id="realtime-status-disconnected">
+                                ○ Realtime Disconnected
+                            </span>
+                        )}
                     </h2>
                     <Link href={route('orders.index')} className="pa-btn pa-btn-secondary pa-btn-sm" style={{ minHeight: '36px' }}>
                         Kembali ke Daftar
@@ -80,7 +151,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                 </div>
             }
         >
-            <Head title={`Detail Pesanan ${order.order_number}`} />
+            <Head title={`Detail Pesanan ${orderState.order_number}`} />
 
             <div className="pa-body">
                 <div className="pa-container">
@@ -92,21 +163,21 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                 <div className="pa-flex-between">
                                     <div>
                                         <div className="pa-subtitle">PASAR TUJUAN</div>
-                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{order.market.name}</h2>
-                                        <p className="pa-subtitle">{order.market.address}</p>
+                                        <h2 className="pa-font-bold" style={{ fontSize: '1.25rem', marginTop: '0.125rem' }}>{orderState.market.name}</h2>
+                                        <p className="pa-subtitle">{orderState.market.address}</p>
                                     </div>
-                                    <StatusBadge status={order.status} />
+                                    <StatusBadge status={orderState.status} />
                                 </div>
-                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(order.created_at)}</p>
+                                <p className="pa-subtitle pa-mt-4">Dibuat pada: {formatDate(orderState.created_at)}</p>
                             </div>
 
                             {/* Joki Information */}
-                            {order.joki && (
+                            {orderState.joki && (
                                 <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
                                     <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Joki Yang Bertugas</h3>
                                     <div style={{ padding: '1rem', border: '1px solid var(--pa-border)', borderRadius: '0.5rem' }}>
-                                        <div className="pa-font-bold">{order.joki.name}</div>
-                                        <div className="pa-subtitle pa-mt-1">Telp: {order.joki.phone_number || '-'}</div>
+                                        <div className="pa-font-bold">{orderState.joki.name}</div>
+                                        <div className="pa-subtitle pa-mt-1">Telp: {orderState.joki.phone_number || '-'}</div>
                                     </div>
                                 </div>
                             )}
@@ -114,7 +185,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                             {/* Progress Timeline */}
                             <div className="pa-form-section" style={{ marginBottom: '1.5rem' }}>
                                 <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Status Perjalanan Belanja</h3>
-                                <ProgressTimeline currentStatus={order.status} />
+                                <ProgressTimeline currentStatus={orderState.status} />
                             </div>
 
                             {/* Daftar Barang Belanjaan */}
@@ -130,7 +201,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items.map((item) => (
+                                            {orderState.items.map((item) => (
                                                 <tr key={item.id}>
                                                     <td className="pa-font-bold">{item.product_name}</td>
                                                     <td>{item.quantity}x</td>
@@ -151,33 +222,33 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                                 
                                 <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
                                     <span className="pa-subtitle">Estimasi Deposito</span>
-                                    <span className="pa-font-bold">{formatRupiah(order.estimated_amount)}</span>
+                                    <span className="pa-font-bold">{formatRupiah(orderState.estimated_amount)}</span>
                                 </div>
 
                                 <div className="pa-flex-between pa-mt-2" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--pa-border)' }}>
                                     <span className="pa-subtitle">Biaya Riil Belanja</span>
-                                    <span className={order.actual_amount !== null ? 'pa-font-bold' : ''}>
-                                        {formatRupiah(order.actual_amount)}
+                                    <span className={orderState.actual_amount !== null ? 'pa-font-bold' : ''}>
+                                        {formatRupiah(orderState.actual_amount)}
                                     </span>
                                 </div>
 
-                                {order.actual_amount !== null && (
+                                {orderState.actual_amount !== null && (
                                     <>
-                                        {order.refund_amount !== null && order.refund_amount > 0 ? (
+                                        {orderState.refund_amount !== null && orderState.refund_amount > 0 ? (
                                             <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: 'var(--pa-primary-light)', color: 'var(--pa-primary-dark)' }}>
                                                 <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Uang Kembali (Refund)</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(order.refund_amount)}</span>
+                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(orderState.refund_amount)}</span>
                                             </div>
                                         ) : null}
 
-                                        {order.additional_payment !== null && order.additional_payment > 0 ? (
+                                        {orderState.additional_payment !== null && orderState.additional_payment > 0 ? (
                                             <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#fef3c7', color: '#92400e' }}>
                                                 <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Kekurangan Bayar</span>
-                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(order.additional_payment)}</span>
+                                                <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(orderState.additional_payment)}</span>
                                             </div>
                                         ) : null}
 
-                                        {order.refund_amount === 0 && order.additional_payment === 0 ? (
+                                        {orderState.refund_amount === 0 && orderState.additional_payment === 0 ? (
                                             <div className="pa-flex-between pa-mt-4" style={{ padding: '0.75rem', borderRadius: '0.375rem', backgroundColor: 'var(--pa-secondary-light)', color: 'var(--pa-secondary-dark)' }}>
                                                 <span className="pa-font-bold" style={{ fontSize: '0.875rem' }}>Jumlah Belanja Sesuai</span>
                                                 <span className="pa-font-bold" style={{ fontSize: '1rem' }}>{formatRupiah(0)}</span>
@@ -188,11 +259,11 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                             </div>
 
                             {/* Bukti Nota Belanja */}
-                            {order.receipts && order.receipts.length > 0 && (
+                            {orderState.receipts && orderState.receipts.length > 0 && (
                                 <div className="pa-form-section pa-mt-4">
                                     <h3 className="pa-font-bold pa-mb-4" style={{ fontSize: '1rem' }}>Nota Belanja Fisik</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {order.receipts.map((receipt) => (
+                                        {orderState.receipts.map((receipt) => (
                                             <div key={receipt.id} style={{ borderBottom: '1px solid var(--pa-border)', paddingBottom: '1rem' }}>
                                                 <img 
                                                     src={receipt.image_url} 

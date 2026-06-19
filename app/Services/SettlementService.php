@@ -35,14 +35,15 @@ class SettlementService
             $additionalPayment = $actualAmount - $estimatedAmount;
         }
 
-        return DB::transaction(function () use ($order, $actualAmount, $refundAmount, $additionalPayment, $estimatedAmount) {
+        $activityLog = null;
+        $updatedOrder = DB::transaction(function () use ($order, $actualAmount, $refundAmount, $additionalPayment, $estimatedAmount, &$activityLog) {
             $order->update([
                 'actual_amount' => $actualAmount,
                 'refund_amount' => $refundAmount,
                 'additional_payment' => $additionalPayment,
             ]);
 
-            ActivityLog::create([
+            $activityLog = ActivityLog::create([
                 'user_id' => auth()->id() ?? $order->assigned_joki_id,
                 'action' => 'SETTLEMENT_CALCULATED',
                 'metadata' => [
@@ -67,5 +68,23 @@ class SettlementService
 
             return $order->fresh();
         });
+
+        if ($activityLog) {
+            $user = auth()->user() ?? $updatedOrder->joki;
+            event(new \App\Events\SettlementUpdated($updatedOrder, [
+                'id' => $activityLog->id,
+                'action' => $activityLog->action,
+                'metadata' => $activityLog->metadata,
+                'created_at' => $activityLog->created_at->toIso8601String(),
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone_number' => $user->phone_number,
+                ],
+            ]));
+        }
+
+        return $updatedOrder;
     }
 }

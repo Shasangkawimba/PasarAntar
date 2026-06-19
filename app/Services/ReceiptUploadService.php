@@ -42,14 +42,15 @@ class ReceiptUploadService
         $path = $file->store('receipts', 'public');
         $imageUrl = Storage::url($path);
 
-        return DB::transaction(function () use ($order, $imageUrl, $joki) {
+        $activityLog = null;
+        $receipt = DB::transaction(function () use ($order, $imageUrl, $joki, &$activityLog) {
             $receipt = Receipt::create([
                 'order_id' => $order->id,
                 'image_url' => $imageUrl,
                 'uploaded_by' => $joki->id,
             ]);
 
-            ActivityLog::create([
+            $activityLog = ActivityLog::create([
                 'user_id' => $joki->id,
                 'action' => 'RECEIPT_UPLOADED',
                 'metadata' => [
@@ -71,5 +72,22 @@ class ReceiptUploadService
 
             return $receipt;
         });
+
+        if ($activityLog) {
+            event(new \App\Events\SettlementUpdated($order->fresh(), [
+                'id' => $activityLog->id,
+                'action' => $activityLog->action,
+                'metadata' => $activityLog->metadata,
+                'created_at' => $activityLog->created_at->toIso8601String(),
+                'user' => [
+                    'id' => $joki->id,
+                    'name' => $joki->name,
+                    'email' => $joki->email,
+                    'phone_number' => $joki->phone_number,
+                ],
+            ]));
+        }
+
+        return $receipt;
     }
 }
