@@ -128,6 +128,14 @@ class JokiAssignmentTest extends TestCase
         $this->assertEquals('DELIVERING', $order->status);
 
         // DELIVERING → COMPLETED
+        // Set actual amount and mock receipt to allow completion
+        $order->update(['actual_amount' => 90000]);
+        \App\Models\Receipt::create([
+            'order_id' => $order->id,
+            'image_url' => '/storage/receipts/test.jpg',
+            'uploaded_by' => $this->joki->id,
+        ]);
+
         $response = $this->actingAs($this->joki)
             ->post(route('joki.orders.status', $order->id), ['status' => 'COMPLETED']);
         $response->assertRedirect();

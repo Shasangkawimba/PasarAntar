@@ -7,6 +7,10 @@ use App\Models\ActivityLog;
 use App\Models\Market;
 use App\Models\Order;
 use App\Services\OrderService;
+use App\Services\SettlementService;
+use App\Services\ReceiptUploadService;
+use App\Http\Requests\OrderSettleRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -152,7 +156,7 @@ class OrderController extends Controller
     {
         Gate::authorize('updateStatus', $order);
 
-        $order->load(['buyer', 'market', 'items']);
+        $order->load(['buyer', 'market', 'items', 'receipts']);
 
         return Inertia::render('Joki/OrderWorkflow', [
             'order' => $order,
@@ -187,5 +191,28 @@ class OrderController extends Controller
 
         return redirect()->route('joki.orders.show', $order->id)
             ->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
+    /**
+     * Save order receipt and calculate settlement.
+     */
+    public function saveSettlement(
+        OrderSettleRequest $request,
+        Order $order,
+        ReceiptUploadService $receiptUploadService,
+        SettlementService $settlementService
+    ): RedirectResponse {
+        Gate::authorize('settle', $order);
+
+        DB::transaction(function () use ($request, $order, $receiptUploadService, $settlementService) {
+            if ($request->hasFile('receipt')) {
+                $receiptUploadService->upload($request->user(), $order, $request->file('receipt'));
+            }
+
+            $settlementService->calculateAndSave($order, (int) $request->input('actual_amount'));
+        });
+
+        return redirect()->route('joki.orders.show', $order->id)
+            ->with('success', 'Nota belanja dan perhitungan selisih berhasil disimpan.');
     }
 }

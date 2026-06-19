@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/joki/orders/{order}', [OrderController::class, 'jokiOrderWorkflow'])->name('joki.orders.show');
         Route::post('/joki/orders/{order}/assign', [OrderController::class, 'assignOrder'])->name('joki.orders.assign');
         Route::post('/joki/orders/{order}/status', [OrderController::class, 'updateOrderStatus'])->name('joki.orders.status');
+        Route::post('/joki/orders/{order}/settle', [OrderController::class, 'saveSettlement'])->name('joki.orders.settle');
     });
 });
 

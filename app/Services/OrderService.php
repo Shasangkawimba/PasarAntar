@@ -129,6 +129,19 @@ class OrderService
             ]);
         }
 
+        if ($newStatus === 'COMPLETED') {
+            if (!$order->receipts()->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Pesanan tidak dapat diselesaikan karena nota belanja belum diunggah.',
+                ]);
+            }
+            if ($order->actual_amount === null) {
+                throw ValidationException::withMessages([
+                    'status' => 'Pesanan tidak dapat diselesaikan karena nominal riil belanja belum diisi.',
+                ]);
+            }
+        }
+
         return DB::transaction(function () use ($joki, $order, $newStatus) {
             $oldStatus = $order->status;
 

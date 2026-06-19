@@ -61,4 +61,12 @@ class OrderPolicy
     {
         return $user->isJoki() && $order->assigned_joki_id === $user->id;
     }
+
+    /**
+     * Determine whether the joki can settle the order.
+     */
+    public function settle(User $user, Order $order): bool
+    {
+        return $user->isJoki() && $order->assigned_joki_id === $user->id;
+    }
 }
