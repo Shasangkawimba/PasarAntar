@@ -13,10 +13,10 @@ export default function MasterChecklistDetail({ checklist }: { checklist: Checkl
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart' };
-            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run' };
-            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt' };
-            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending' };
+            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart', label: 'Siap Belanja' };
+            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run', label: 'Sedang Belanja' };
+            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt', label: 'Selesai' };
+            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending', label: 'Pending' };
         }
     };
 

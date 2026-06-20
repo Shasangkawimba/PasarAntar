@@ -42,7 +42,7 @@ const Trigger = ({ children }: PropsWithChildren) => {
 
             {open && (
                 <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[90]"
                     onClick={() => setOpen(false)}
                 ></div>
             )}
@@ -53,7 +53,7 @@ const Trigger = ({ children }: PropsWithChildren) => {
 const Content = ({
     align = 'right',
     width = '48',
-    contentClasses = 'py-1 bg-obsidian border border-graphite',
+    contentClasses = 'py-1',
     children,
 }: PropsWithChildren<{
     align?: 'left' | 'right';
@@ -88,14 +88,15 @@ const Content = ({
                 leaveTo="opacity-0 scale-95"
             >
                 <div
-                    className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
+                    className={`absolute z-[100] mt-2 rounded-[16px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${alignmentClasses} ${widthClasses}`}
                     onClick={() => setOpen(false)}
                 >
                     <div
                         className={
-                            `rounded-md ring-1 ring-black ring-opacity-5 ` +
+                            `rounded-[16px] bg-[var(--pa-surface-container-lowest)] overflow-hidden ` +
                             contentClasses
                         }
+                        style={{ border: '1px solid var(--pa-surface-variant)' }}
                     >
                         {children}
                     </div>
@@ -114,9 +115,12 @@ const DropdownLink = ({
         <Link
             {...props}
             className={
-                'block w-full px-4 py-2 text-start text-sm leading-5 text-fog transition duration-150 ease-in-out hover:bg-charcoal hover:text-snow focus:bg-charcoal focus:outline-none ' +
+                'block w-full px-4 py-2 text-start text-[14px] font-medium transition duration-150 ease-in-out focus:outline-none ' +
                 className
             }
+            style={{ color: 'var(--pa-text-main)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--pa-surface-container-low)'; e.currentTarget.style.color = 'var(--pa-primary)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--pa-text-main)'; }}
         >
             {children}
         </Link>

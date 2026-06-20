@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
+import Dialog from '@/Components/Dialog';
 
 interface User {
     id: number;
@@ -30,9 +31,16 @@ export default function AvailableOrders({ orders }: { orders: Order[] }) {
     const formatRupiah = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
     const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+    const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; orderId: number | null }>({ show: false, orderId: null });
+
     const handleAssign = (orderId: number) => {
-        if (confirm('Apakah Anda yakin ingin mengambil pesanan ini?')) {
-            router.post(route('joki.orders.assign', orderId));
+        setConfirmDialog({ show: true, orderId });
+    };
+
+    const confirmAssign = () => {
+        if (confirmDialog.orderId) {
+            router.post(route('joki.orders.assign', confirmDialog.orderId));
+            setConfirmDialog({ show: false, orderId: null });
         }
     };
 
@@ -52,15 +60,15 @@ export default function AvailableOrders({ orders }: { orders: Order[] }) {
 
             {/* Hero Row */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8">
-                <div className="pa-bento-card md:col-span-8 p-6 md:p-8 flex flex-col justify-between"
+                <div className="pa-bento-card md:col-span-8 p-5 md:p-8 flex flex-col justify-between"
                     style={{ background: `linear-gradient(135deg, var(--pa-primary-fixed) 0%, var(--pa-surface-container-lowest) 100%)` }}
                 >
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3" style={{ backgroundColor: 'rgba(70,72,212,0.1)', color: 'var(--pa-primary)' }}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3" style={{ backgroundColor: 'rgba(105, 141, 53, 0.1)', color: 'var(--pa-primary)' }}>
                             <span className="material-symbols-outlined icon-fill" style={{ fontSize: 14 }}>radar</span>
                             <span className="pa-label-caps">Radar Joki</span>
                         </div>
-                        <h2 className="pa-headline-md" style={{ fontSize: 'clamp(20px, 3vw, 28px)' }}>
+                        <h2 className="pa-headline-md leading-tight" style={{ fontSize: 'clamp(18px, 4vw, 28px)' }}>
                             Ambil Pesanan Belanja,<br />
                             Bantu Tetangga Anda.
                         </h2>
@@ -70,11 +78,11 @@ export default function AvailableOrders({ orders }: { orders: Order[] }) {
                     </div>
                 </div>
 
-                <div className="pa-bento-card md:col-span-4 p-6 flex flex-col justify-between"
+                <div className="pa-bento-card md:col-span-4 p-5 md:p-6 flex flex-col justify-between"
                     style={{ background: `linear-gradient(135deg, rgba(249,115,22,0.08) 0%, var(--pa-surface-container-lowest) 100%)` }}
                 >
                     <span className="pa-label-caps" style={{ color: 'var(--pa-status-shopping)' }}>Panduan Joki</span>
-                    <h3 className="pa-headline-md mt-2">Prosedur Belanja</h3>
+                    <h3 className="pa-headline-md mt-2" style={{ fontSize: 'clamp(16px, 3vw, 20px)' }}>Prosedur Belanja</h3>
                     <div className="mt-4 space-y-3">
                         <div className="flex items-start gap-2">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: 'var(--pa-status-shopping)', fontSize: 10, fontWeight: 700 }}>1</div>
@@ -160,6 +168,24 @@ export default function AvailableOrders({ orders }: { orders: Order[] }) {
                     ))}
                 </div>
             )}
+
+            <Dialog
+                show={confirmDialog.show}
+                onClose={() => setConfirmDialog({ show: false, orderId: null })}
+                title="Konfirmasi Pesanan"
+                icon="help"
+                iconColor="var(--pa-info-sky)"
+            >
+                <p>Apakah Anda yakin ingin mengambil pesanan ini? Anda akan bertanggung jawab untuk membelanjakan pesanan ini.</p>
+                <div className="mt-6 flex justify-end gap-3 w-full">
+                    <button type="button" onClick={() => setConfirmDialog({ show: false, orderId: null })} className="pa-btn pa-btn-ghost">
+                        Batal
+                    </button>
+                    <button type="button" onClick={confirmAssign} className="pa-btn pa-btn-primary">
+                        Ya, Ambil Pesanan
+                    </button>
+                </div>
+            </Dialog>
         </AuthenticatedLayout>
     );
 }

@@ -137,8 +137,11 @@ export default function CreateOrder({ market }: CreateOrderProps) {
                                                     <span className="material-symbols-outlined text-sm">remove</span>
                                                 </button>
                                                 <input
-                                                    type="number"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
                                                     className="w-12 text-center border-0 bg-transparent py-2 pa-button-text p-0 focus:ring-0"
+                                                    style={{ color: 'var(--pa-text-main)', fontSize: '16px' }}
                                                     value={item.quantity}
                                                     onChange={(e) => handleItemChange(idx, 'quantity', parseInt(e.target.value) || 1)}
                                                     min="1"

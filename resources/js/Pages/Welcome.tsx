@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageProps } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 
@@ -7,10 +7,35 @@ export default function Welcome({
     laravelVersion,
     phpVersion,
 }: PageProps<{ laravelVersion: string; phpVersion: string }>) {
+    const [activeSection, setActiveSection] = useState('home');
+    const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const sections = ['home', 'how-it-works', 'become-joki'];
+            const scrollPosition = window.scrollY + 200;
+
+            let current = 'home';
+            for (const section of sections) {
+                const element = document.getElementById(section);
+                if (element && element.offsetTop - 100 <= scrollPosition) {
+                    current = section;
+                }
+            }
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+                current = 'become-joki';
+            }
+            setActiveSection(current);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <>
             <Head title="Selamat Datang di Pasar Antar" />
-            <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--pa-background)', color: 'var(--pa-on-background)' }}>
+            <div id="home" className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--pa-background)', color: 'var(--pa-on-background)' }}>
 
                 {/* Top Navigation */}
                 <header
@@ -23,7 +48,7 @@ export default function Welcome({
                     id="top-nav"
                 >
                     <div className="flex items-center gap-3">
-                        <img src="/PasarAntar.png" alt="Pasar Antar" style={{ height: 32 }} />
+                        <img src="/PasarAntar.png" alt="Pasar Antar" style={{ height: 50 }} />
                         <span style={{ color: 'var(--pa-primary)', fontWeight: 700, fontSize: 20, letterSpacing: '-0.01em' }}>
                             Pasar Antar
                         </span>
@@ -31,9 +56,9 @@ export default function Welcome({
 
                     {/* Desktop Nav */}
                     <nav className="hidden md:flex items-center gap-8">
-                        <a href="#" className="pa-button-text" style={{ color: 'var(--pa-primary)', borderBottom: '2px solid var(--pa-primary)', paddingBottom: 4 }}>Home</a>
-                        <a href="#how-it-works" className="pa-button-text" style={{ color: 'var(--pa-text-muted)', paddingBottom: 4, transition: 'color 0.2s' }}>Cara Kerja</a>
-                        <a href="#become-joki" className="pa-button-text" style={{ color: 'var(--pa-text-muted)', paddingBottom: 4, transition: 'color 0.2s' }}>Untuk Joki</a>
+                        <a href="#home" className="pa-button-text" style={{ color: activeSection === 'home' ? 'var(--pa-primary)' : 'var(--pa-text-muted)', borderBottom: activeSection === 'home' ? '2px solid var(--pa-primary)' : '2px solid transparent', paddingBottom: 4, transition: 'all 0.2s' }}>Home</a>
+                        <a href="#how-it-works" className="pa-button-text" style={{ color: activeSection === 'how-it-works' ? 'var(--pa-primary)' : 'var(--pa-text-muted)', borderBottom: activeSection === 'how-it-works' ? '2px solid var(--pa-primary)' : '2px solid transparent', paddingBottom: 4, transition: 'all 0.2s' }}>Cara Kerja</a>
+                        <a href="#become-joki" className="pa-button-text" style={{ color: activeSection === 'become-joki' ? 'var(--pa-primary)' : 'var(--pa-text-muted)', borderBottom: activeSection === 'become-joki' ? '2px solid var(--pa-primary)' : '2px solid transparent', paddingBottom: 4, transition: 'all 0.2s' }}>Untuk Joki</a>
                     </nav>
 
                     <div className="flex items-center gap-4">
@@ -42,40 +67,53 @@ export default function Welcome({
                                 Buka Dashboard
                             </Link>
                         ) : (
-                            <div className="hidden md:flex gap-3">
-                                <Link
-                                    href={route('login')}
-                                    className="pa-btn pa-btn-secondary pa-btn-sm"
-                                    style={{ borderRadius: 9999 }}
-                                >
-                                    Masuk
-                                </Link>
-                                <Link
-                                    href={route('register')}
-                                    className="pa-btn pa-btn-primary pa-btn-sm"
-                                    style={{ borderRadius: 9999 }}
-                                >
-                                    Daftar Sekarang
-                                </Link>
-                            </div>
+                            <>
+                                <div className="hidden md:flex gap-3">
+                                    <Link
+                                        href={route('login')}
+                                        className="pa-btn pa-btn-secondary pa-btn-sm"
+                                        style={{ borderRadius: 9999 }}
+                                    >
+                                        Masuk
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="pa-btn pa-btn-primary pa-btn-sm"
+                                        style={{ borderRadius: 9999 }}
+                                    >
+                                        Daftar Sekarang
+                                    </Link>
+                                </div>
+                                <div className="md:hidden relative">
+                                    <button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} className="p-2 rounded-full" style={{ color: 'var(--pa-primary)' }}>
+                                        <span className="material-symbols-outlined text-2xl">menu</span>
+                                    </button>
+                                    {isMobileMenuOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)}></div>
+                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50 overflow-hidden" style={{ border: '1px solid var(--pa-surface-variant)' }}>
+                                                <Link href={route('login')} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 font-bold" style={{ color: 'var(--pa-primary)' }}>Masuk</Link>
+                                                <Link href={route('register')} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">Daftar Sekarang</Link>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </>
                         )}
-                        <button className="md:hidden p-2 rounded-full" style={{ color: 'var(--pa-primary)' }}>
-                            <span className="material-symbols-outlined text-2xl">menu</span>
-                        </button>
                     </div>
                 </header>
 
                 {/* Main Content */}
-                <main className="flex-grow pt-16 pb-20 md:pb-0 w-full max-w-7xl mx-auto flex flex-col gap-y-8 md:gap-y-16 mt-8"
-                    style={{ padding: '80px var(--pa-margin-mobile) 80px' }}
-                >
+                <main className="flex-grow pt-24 pb-20 md:pb-12 w-full max-w-7xl mx-auto flex flex-col gap-y-12 md:gap-y-20 px-4 sm:px-6 lg:px-8">
                     {/* Hero Section */}
-                    <section className="flex flex-col md:flex-row items-center gap-8 justify-between w-full mt-4 md:mt-12">
-                        <div className="flex-1 flex flex-col gap-6 md:pr-12">
+                    <section className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[auto_1fr] md:gap-x-12 gap-y-6 md:gap-y-8 items-start w-full mt-4 md:mt-12">
+                        
+                        {/* 1. Headline Block */}
+                        <div className="flex flex-col gap-6 md:col-start-1 md:row-start-1 z-10">
                             {/* Eyebrow Badge */}
                             <div
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full w-fit"
-                                style={{ backgroundColor: 'rgba(70,72,212,0.08)', color: 'var(--pa-primary)' }}
+                                style={{ backgroundColor: 'rgba(105, 141, 53, 0.1)', color: 'var(--pa-primary)' }}
                             >
                                 <span className="material-symbols-outlined icon-fill" style={{ fontSize: 14 }}>storefront</span>
                                 <span className="pa-label-caps">Human-Powered Market Delivery</span>
@@ -91,16 +129,57 @@ export default function Welcome({
                                     </svg>
                                 </span>
                                 <br className="hidden md:block" />
-                                langsung ke rumah Anda.
+                                {' '}langsung ke rumah Anda.
                             </h1>
+                        </div>
 
+                        {/* 2. Image Block (Mobile goes here natively, Desktop goes right) */}
+                        <div className="w-full flex flex-col max-w-[320px] md:max-w-md lg:max-w-lg mx-auto md:col-start-2 md:row-start-1 md:row-span-2 relative mt-4 mb-10 md:mt-0 md:mb-0 z-0">
+                            <div className="relative w-full">
+                                {/* Decorative blob */}
+                                <div
+                                    className="absolute rounded-full blur-3xl opacity-40"
+                                    style={{
+                                        backgroundColor: 'var(--pa-primary-fixed)',
+                                        width: '75%', height: '75%',
+                                        top: '12%', left: '12%',
+                                    }}
+                                />
+                                {/* Main Logo Display */}
+                                <div
+                                    className="relative z-10 overflow-hidden flex items-center justify-center p-6 md:p-8"
+                                    style={{
+                                        borderRadius: 'var(--pa-radius-bento)',
+                                        backgroundColor: 'var(--pa-surface-container-low)',
+                                        border: '4px solid var(--pa-surface-container-lowest)',
+                                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+                                    }}
+                                >
+                                    <img src="/market_hero.png" alt="Pasar Antar Market" className="w-full h-auto object-contain" style={{ borderRadius: 12, aspectRatio: '1' }} />
+                                </div>
+                                
+                                {/* Decorative Floating Rating Card */}
+                                <div className="absolute -bottom-4 -left-4 md:-bottom-6 md:-left-8 bg-white p-3 md:p-4 rounded-2xl shadow-xl flex items-center gap-3 z-20" style={{ animation: 'pa-float 4s ease-in-out infinite' }}>
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--pa-tertiary-fixed)', color: 'var(--pa-on-tertiary-container)' }}>
+                                        <span className="material-symbols-outlined icon-fill text-xl md:text-2xl" style={{ color: '#F59E0B' }}>star</span>
+                                    </div>
+                                    <div className="flex flex-col pr-2">
+                                        <span className="font-bold text-gray-900" style={{ fontSize: '13px' }}>4.9/5 Rating</span>
+                                        <span className="text-gray-500" style={{ fontSize: '11px' }}>Dari 5,000+ pengguna</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Description, CTA, & Benefits Block */}
+                        <div className="flex flex-col gap-6 md:col-start-1 md:row-start-2 pb-4 md:pb-0 z-10">
                             {/* Description */}
                             <p className="pa-body-lg" style={{ color: 'var(--pa-text-muted)', maxWidth: 480 }}>
                                 Lewati keramaian pagi hari. Joki Pasar kami memilihkan sayur, daging, dan bumbu segar langsung dari pedagang lokal terpercaya, menjamin kualitas dan harga pasar asli.
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                            <div className="flex flex-col sm:flex-row gap-4 mt-2">
                                 {auth.user ? (
                                     <Link href={route('markets.index')} className="pa-btn pa-btn-primary" style={{ borderRadius: 12, padding: '16px 32px' }}>
                                         <span className="material-symbols-outlined icon-fill">shopping_basket</span>
@@ -118,80 +197,31 @@ export default function Welcome({
                                 </a>
                             </div>
 
-                            {/* Social Proof */}
-                            <div className="flex items-center gap-4 mt-4">
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
-                                            style={{
-                                                borderColor: 'var(--pa-surface-container-lowest)',
-                                                backgroundColor: i === 1 ? 'var(--pa-primary-fixed)' : i === 2 ? 'var(--pa-secondary-container)' : 'var(--pa-tertiary-fixed, #ffddb8)',
-                                                color: i === 1 ? 'var(--pa-primary)' : i === 2 ? 'var(--pa-secondary)' : 'var(--pa-tertiary)',
-                                                zIndex: 4 - i,
-                                            }}
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person</span>
-                                        </div>
-                                    ))}
+                            {/* Benefits/Keunggulan */}
+                            <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 w-full max-w-full">
+                                {/* Feature 1 */}
+                                <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100 hover:-translate-y-1 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 z-10 transition-transform group-hover:scale-110" style={{ backgroundColor: 'var(--pa-primary-fixed)', color: 'var(--pa-primary)' }}>
+                                        <span className="material-symbols-outlined icon-fill text-xl sm:text-2xl">verified</span>
+                                    </div>
+                                    <span className="pa-body-sm font-extrabold text-center leading-tight z-10" style={{ color: 'var(--pa-text-main)', fontSize: 'clamp(11px, 2.5vw, 14px)' }}>100% Segar</span>
                                 </div>
-                                <div className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>
-                                    <span style={{ fontWeight: 700, color: 'var(--pa-text-main)' }}>5,000+</span> tetangga senang
+                                {/* Feature 2 */}
+                                <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100 hover:-translate-y-1 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 z-10 transition-transform group-hover:scale-110" style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: 'var(--pa-status-shopping)' }}>
+                                        <span className="material-symbols-outlined icon-fill text-xl sm:text-2xl">payments</span>
+                                    </div>
+                                    <span className="pa-body-sm font-extrabold text-center leading-tight z-10" style={{ color: 'var(--pa-text-main)', fontSize: 'clamp(11px, 2.5vw, 14px)' }}>Harga Asli</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Hero Right: Logo Display */}
-                        <div className="flex-1 w-full relative max-w-md mx-auto md:max-w-none mt-8 md:mt-0">
-                            {/* Decorative blob */}
-                            <div
-                                className="absolute rounded-full blur-3xl opacity-40"
-                                style={{
-                                    backgroundColor: 'var(--pa-primary-fixed)',
-                                    width: '75%', height: '75%',
-                                    top: '12%', left: '12%',
-                                }}
-                            />
-                            {/* Main Logo Display */}
-                            <div
-                                className="relative z-10 overflow-hidden flex items-center justify-center p-8"
-                                style={{
-                                    borderRadius: 'var(--pa-radius-bento)',
-                                    backgroundColor: 'var(--pa-surface-container-low)',
-                                    border: '4px solid var(--pa-surface-container-lowest)',
-                                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
-                                    aspectRatio: '1',
-                                }}
-                            >
-                                <img src="/PasarAntar.png" alt="Pasar Antar Logo" className="w-full h-full object-contain" style={{ borderRadius: 12 }} />
-                            </div>
-
-                            {/* Floating Status Card 1 */}
-                            <div
-                                className="absolute z-20 pa-bento-card flex items-center gap-3"
-                                style={{ bottom: -24, left: -24, padding: '12px 16px', animation: 'pa-pulse-green 3s infinite' }}
-                            >
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: 'var(--pa-status-shopping)' }}>
-                                    <span className="material-symbols-outlined icon-fill">storefront</span>
-                                </div>
-                                <div>
-                                    <div className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>Status</div>
-                                    <div className="pa-button-text" style={{ color: 'var(--pa-status-shopping)' }}>Belanja di Pasar Senen</div>
-                                </div>
-                            </div>
-
-                            {/* Floating Status Card 2 */}
-                            <div
-                                className="absolute z-20 pa-bento-card flex items-center gap-3"
-                                style={{ top: -24, right: -24, padding: '12px 16px' }}
-                            >
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16,185,129,0.15)', color: 'var(--pa-status-completed)' }}>
-                                    <span className="material-symbols-outlined icon-fill">check_circle</span>
-                                </div>
-                                <div>
-                                    <div className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>Dikirim</div>
-                                    <div className="pa-button-text" style={{ color: 'var(--pa-text-main)' }}>Bahan Segar Tiba</div>
+                                {/* Feature 3 */}
+                                <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100 hover:-translate-y-1 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 z-10 transition-transform group-hover:scale-110" style={{ backgroundColor: 'rgba(14,165,233,0.1)', color: 'var(--pa-info-sky)' }}>
+                                        <span className="material-symbols-outlined icon-fill text-xl sm:text-2xl">bolt</span>
+                                    </div>
+                                    <span className="pa-body-sm font-extrabold text-center leading-tight z-10" style={{ color: 'var(--pa-text-main)', fontSize: 'clamp(11px, 2.5vw, 14px)' }}>Kirim Cepat</span>
                                 </div>
                             </div>
                         </div>
@@ -208,94 +238,38 @@ export default function Welcome({
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Step 1 */}
-                            <div className="pa-bento-card md:col-span-4 p-6 md:p-8 flex flex-col group">
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform" style={{ backgroundColor: 'rgba(14,165,233,0.1)', color: 'var(--pa-info-sky)' }}>
-                                    <span className="material-symbols-outlined icon-fill text-2xl">map</span>
+                            <div className="pa-bento-card p-8 flex flex-col text-center items-center group transition-all hover:-translate-y-1">
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: 'var(--pa-primary-fixed)', color: 'var(--pa-primary)', border: '2px solid rgba(105,141,53,0.1)' }}>
+                                    <span className="material-symbols-outlined icon-fill text-3xl">storefront</span>
                                 </div>
-                                <h3 className="pa-headline-md mb-2">1. Pilih Pasar</h3>
-                                <p className="pa-body-sm flex-grow" style={{ color: 'var(--pa-text-muted)' }}>
-                                    Pilih pasar tradisional lokal favorit Anda. Kami bermitra dengan pasar-pasar utama untuk memastikan Anda mendapatkan apa yang biasa dibeli.
+                                <h3 className="pa-headline-md mb-3 text-xl">1. Pilih Pasar Favorit</h3>
+                                <p className="pa-body-md flex-grow" style={{ color: 'var(--pa-text-muted)', lineHeight: 1.6 }}>
+                                    Pilih pasar tradisional terdekat dan buat daftar belanja Anda melalui aplikasi dengan mudah dan praktis.
                                 </p>
-                                <div className="mt-6 rounded-lg p-3 flex flex-col gap-2" style={{ backgroundColor: 'var(--pa-surface-container)', border: '1px solid var(--pa-surface-variant)' }}>
-                                    <div className="flex items-center justify-between p-2 rounded shadow-sm" style={{ backgroundColor: 'var(--pa-surface-container-lowest)', border: '1px solid rgba(199,196,215,0.3)' }}>
-                                        <div className="flex items-center gap-2">
-                                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--pa-primary)' }}>store</span>
-                                            <span className="pa-button-text" style={{ fontSize: 13 }}>Pasar Senen</span>
-                                        </div>
-                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--pa-status-completed)' }} />
-                                    </div>
-                                    <div className="flex items-center justify-between p-2 rounded shadow-sm opacity-50" style={{ backgroundColor: 'var(--pa-surface-container-lowest)', border: '1px solid rgba(199,196,215,0.3)' }}>
-                                        <div className="flex items-center gap-2">
-                                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--pa-text-muted)' }}>store</span>
-                                            <span className="pa-button-text" style={{ fontSize: 13, color: 'var(--pa-text-muted)' }}>Pasar Kramat Jati</span>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Step 2 */}
-                            <div className="pa-bento-card md:col-span-8 p-0 flex flex-col md:flex-row overflow-hidden relative">
-                                <div className="p-6 md:p-8 flex flex-col flex-1 z-10" style={{ backgroundColor: 'rgba(255,255,255,0.85)' }}>
-                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: 'var(--pa-status-shopping)' }}>
-                                        <span className="material-symbols-outlined icon-fill text-2xl">shopping_cart</span>
-                                    </div>
-                                    <h3 className="pa-headline-md mb-2">2. Joki Belanja Langsung</h3>
-                                    <p className="pa-body-sm max-w-sm" style={{ color: 'var(--pa-text-muted)' }}>
-                                        Joki personal shopper berpengalaman menelusuri pasar, memilih bahan terbaik dan bernegosiasi harga seperti Anda sendiri.
-                                    </p>
-                                    <div className="mt-auto rounded-xl p-4 max-w-sm" style={{ backgroundColor: 'var(--pa-surface-container)', border: '1px solid var(--pa-surface-variant)' }}>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="pa-label-caps" style={{ color: 'var(--pa-text-muted)' }}>Daftar Belanja Budi</span>
-                                            <span className="px-2 py-1 rounded text-[10px] font-bold" style={{ backgroundColor: 'rgba(249,115,22,0.15)', color: 'var(--pa-status-shopping)' }}>AKTIF</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-3 p-2 rounded shadow-sm opacity-50" style={{ backgroundColor: 'var(--pa-surface-container-lowest)' }}>
-                                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-status-completed)', fontSize: 18 }}>check_box</span>
-                                                <span className="pa-body-sm line-through" style={{ color: 'var(--pa-text-muted)', fontSize: 13 }}>Ayam Kampung (1 ekor)</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 p-2 rounded shadow-sm" style={{ backgroundColor: 'var(--pa-surface-container-lowest)', borderLeft: '2px solid var(--pa-status-shopping)' }}>
-                                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-outline)', fontSize: 18 }}>check_box_outline_blank</span>
-                                                <span className="pa-body-sm font-semibold" style={{ fontSize: 13, color: 'var(--pa-text-main)' }}>Bawang Merah (500g)</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 p-2 rounded shadow-sm" style={{ backgroundColor: 'var(--pa-surface-container-lowest)' }}>
-                                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-outline)', fontSize: 18 }}>check_box_outline_blank</span>
-                                                <span className="pa-body-sm" style={{ fontSize: 13, color: 'var(--pa-text-main)' }}>Cabai Rawit Merah (250g)</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div className="pa-bento-card p-8 flex flex-col text-center items-center group transition-all hover:-translate-y-1">
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: 'var(--pa-secondary-container)', color: 'var(--pa-secondary)', border: '2px solid rgba(13,109,79,0.1)' }}>
+                                    <span className="material-symbols-outlined icon-fill text-3xl">shopping_cart</span>
                                 </div>
-                                {/* Decorative side */}
-                                <div className="h-48 md:h-auto md:w-1/2 relative overflow-hidden" style={{ backgroundColor: 'var(--pa-surface-variant)' }}>
-                                    <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, var(--pa-primary-fixed) 0%, var(--pa-secondary-container) 50%, var(--pa-tertiary-fixed, #ffddb8) 100%)`, opacity: 0.6 }} />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="material-symbols-outlined icon-fill" style={{ fontSize: 80, color: 'var(--pa-primary)', opacity: 0.3 }}>storefront</span>
-                                    </div>
-                                </div>
+                                <h3 className="pa-headline-md mb-3 text-xl">2. Joki Kami Berbelanja</h3>
+                                <p className="pa-body-md flex-grow" style={{ color: 'var(--pa-text-muted)', lineHeight: 1.6 }}>
+                                    Joki berpengalaman akan memilihkan bahan terbaik dan paling segar dengan harga asli dari pedagang.
+                                </p>
                             </div>
 
                             {/* Step 3 */}
-                            <div className="pa-bento-card md:col-span-12 p-6 md:p-8 flex flex-col md:flex-row items-center gap-8"
-                                style={{ background: `linear-gradient(135deg, var(--pa-surface-container-lowest), var(--pa-surface-container-low))` }}
-                            >
-                                <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 shadow-sm"
-                                    style={{ backgroundColor: 'var(--pa-secondary-container)', color: 'var(--pa-on-secondary-container)', border: '1px solid rgba(0,108,73,0.2)' }}
-                                >
+                            <div className="pa-bento-card p-8 flex flex-col text-center items-center group transition-all hover:-translate-y-1">
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: 'var(--pa-status-shopping)', border: '2px solid rgba(249,115,22,0.1)' }}>
                                     <span className="material-symbols-outlined icon-fill text-3xl">two_wheeler</span>
                                 </div>
-                                <div className="flex-1 text-center md:text-left">
-                                    <h3 className="pa-headline-md mb-2">3. Langsung ke Dapur Anda</h3>
-                                    <p className="pa-body-sm max-w-2xl" style={{ color: 'var(--pa-text-muted)' }}>
-                                        Setelah selesai belanja, Joki segera mengirimkan bahan segar ke pintu rumah Anda. Tanpa gudang perantara, tanpa penundaan. Cuma bahan pasar segar, cepat.
-                                    </p>
-                                </div>
-                                <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-full shadow-sm"
-                                    style={{ backgroundColor: 'var(--pa-surface-container-lowest)', border: '1px solid var(--pa-surface-variant)' }}
-                                >
-                                    <span className="w-3 h-3 rounded-full pa-pulse-dot" style={{ backgroundColor: 'var(--pa-status-completed)' }} />
-                                    <span className="pa-button-text" style={{ fontSize: 13, color: 'var(--pa-status-completed)' }}>Estimasi 30-45 menit</span>
-                                </div>
+                                <h3 className="pa-headline-md mb-3 text-xl">3. Langsung Diantar</h3>
+                                <p className="pa-body-md flex-grow" style={{ color: 'var(--pa-text-muted)', lineHeight: 1.6 }}>
+                                    Belanjaan segera dikirim langsung ke dapur Anda. Tanpa mampir ke gudang, dijamin kesegarannya.
+                                </p>
                             </div>
                         </div>
                     </section>
@@ -343,40 +317,92 @@ export default function Welcome({
                     </section>
                 </main>
 
-                {/* Footer */}
-                <footer style={{ borderTop: '1px solid var(--pa-surface-variant)', backgroundColor: 'var(--pa-surface-container-lowest)', padding: '2rem 0' }}>
-                    <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 pa-label-caps" style={{ color: 'var(--pa-outline)', fontSize: 10 }}>
-                        <div className="flex items-center gap-2">
-                            <img src="/PasarAntar.png" alt="" style={{ height: 16, opacity: 0.5 }} />
-                            Pasar Antar &copy; {new Date().getFullYear()}
+                {/* Iconic Footer */}
+                <footer className="relative mt-20" style={{ backgroundColor: 'var(--pa-surface-container)', borderTop: '1px solid var(--pa-surface-variant)' }}>
+                    {/* Top Decorative Line */}
+                    <div className="absolute top-0 left-0 w-full h-1" style={{ background: 'linear-gradient(90deg, var(--pa-primary), var(--pa-secondary-container), var(--pa-tertiary-container))' }} />
+                    
+                    <div className="max-w-7xl mx-auto px-6 pt-16 pb-12 md:pt-20">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
+                            {/* Brand Column */}
+                            <div className="md:col-span-5 flex flex-col gap-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white rounded-xl shadow-sm border" style={{ borderColor: 'var(--pa-surface-variant)' }}>
+                                        <img src="/PasarAntar.png" alt="Logo" className="h-8 md:h-10 w-auto" />
+                                    </div>
+                                    <h2 className="pa-headline-md" style={{ color: 'var(--pa-text-main)', fontSize: 'clamp(20px, 3vw, 24px)' }}>Pasar Antar</h2>
+                                </div>
+                                <p className="pa-body-md" style={{ color: 'var(--pa-text-muted)', maxWidth: '320px', lineHeight: 1.6 }}>
+                                    Menghubungkan dapur keluarga dengan kesegaran pasar tradisional lokal melalui joki belanja profesional yang dapat Anda percaya.
+                                </p>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm hover:-translate-y-1 transition-all group" style={{ border: '1px solid var(--pa-surface-variant)' }}>
+                                        <span className="material-symbols-outlined group-hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>photo_camera</span>
+                                    </a>
+                                    <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm hover:-translate-y-1 transition-all group" style={{ border: '1px solid var(--pa-surface-variant)' }}>
+                                        <span className="material-symbols-outlined group-hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>forum</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Links Column */}
+                            <div className="md:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-8">
+                                <div className="flex flex-col gap-4">
+                                    <h4 className="font-bold pa-label-caps" style={{ color: 'var(--pa-text-main)' }}>Platform</h4>
+                                    <a href="#home" className="pa-body-sm hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>Beranda</a>
+                                    <a href="#how-it-works" className="pa-body-sm hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>Cara Kerja</a>
+                                    <a href="#become-joki" className="pa-body-sm hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>Gabung Joki</a>
+                                </div>
+                                <div className="flex flex-col gap-4">
+                                    <h4 className="font-bold pa-label-caps" style={{ color: 'var(--pa-text-main)' }}>Pengguna</h4>
+                                    <Link href={route('login')} className="pa-body-sm hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>Masuk Akun</Link>
+                                    <Link href={route('register')} className="pa-body-sm hover:text-[var(--pa-primary)] transition-colors" style={{ color: 'var(--pa-text-muted)' }}>Daftar Baru</Link>
+                                </div>
+                                <div className="flex flex-col gap-4 col-span-2 md:col-span-1">
+                                    <h4 className="font-bold pa-label-caps" style={{ color: 'var(--pa-text-main)' }}>Hubungi Kami</h4>
+                                    <div className="flex items-start gap-2 pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>
+                                        <span className="material-symbols-outlined text-lg shrink-0" style={{ color: 'var(--pa-primary)' }}>mail</span>
+                                        <span>halo@pasarantar.id</span>
+                                    </div>
+                                    <div className="flex items-start gap-2 pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>
+                                        <span className="material-symbols-outlined text-lg shrink-0" style={{ color: 'var(--pa-primary)' }}>location_on</span>
+                                        <span>Jakarta, Indonesia</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>Laravel v{laravelVersion} (PHP v{phpVersion})</div>
+
+                        {/* Bottom Bar */}
+                        <div className="mt-12 md:mt-16 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t" style={{ borderColor: 'rgba(199,196,215,0.4)' }}>
+                            <p className="pa-label-caps text-center md:text-left" style={{ color: 'var(--pa-outline)' }}>
+                                &copy; {new Date().getFullYear()} Pasar Antar. Hak Cipta Dilindungi.
+                            </p>
+                            <p className="pa-label-caps flex items-center justify-center gap-2" style={{ color: 'var(--pa-outline)' }}>
+                                <span className="material-symbols-outlined text-[14px]">code</span>
+                                Laravel v{laravelVersion} (PHP v{phpVersion})
+                            </p>
+                        </div>
                     </div>
                 </footer>
 
                 {/* Mobile Bottom Nav */}
                 <nav className="md:hidden pa-bottom-nav">
-                    <a href="#" className="pa-bottom-nav-item active">
+                    <a href="#home" className={`pa-bottom-nav-item ${activeSection === 'home' ? 'active' : ''}`}>
                         <span className="material-symbols-outlined icon-fill">home</span>
                         <span className="pa-nav-label">Home</span>
                     </a>
-                    <a href="#how-it-works" className="pa-bottom-nav-item">
+                    <a href="#how-it-works" className={`pa-bottom-nav-item ${activeSection === 'how-it-works' ? 'active' : ''}`}>
                         <span className="material-symbols-outlined">receipt_long</span>
                         <span className="pa-nav-label">Cara Kerja</span>
                     </a>
-                    <a href="#become-joki" className="pa-bottom-nav-item">
+                    <a href="#become-joki" className={`pa-bottom-nav-item ${activeSection === 'become-joki' ? 'active' : ''}`}>
                         <span className="material-symbols-outlined">store</span>
                         <span className="pa-nav-label">Joki</span>
                     </a>
-                    {auth.user ? (
+                    {auth.user && (
                         <Link href={route('dashboard')} className="pa-bottom-nav-item">
-                            <span className="material-symbols-outlined">person</span>
-                            <span className="pa-nav-label">Profil</span>
-                        </Link>
-                    ) : (
-                        <Link href={route('login')} className="pa-bottom-nav-item">
-                            <span className="material-symbols-outlined">login</span>
-                            <span className="pa-nav-label">Masuk</span>
+                            <span className="material-symbols-outlined">dashboard</span>
+                            <span className="pa-nav-label">Dashboard</span>
                         </Link>
                     )}
                 </nav>

@@ -7,15 +7,15 @@
 
 :root {
     /* ── Color System (Material 3 Tonal Palette) ── */
-    --pa-primary: #4648d4;
-    --pa-primary-container: #6063ee;
+    --pa-primary: #698d35;
+    --pa-primary-container: #88b746;
     --pa-on-primary: #ffffff;
-    --pa-on-primary-container: #fffbff;
-    --pa-on-primary-fixed: #07006c;
-    --pa-on-primary-fixed-variant: #2f2ebe;
-    --pa-primary-fixed: #e1e0ff;
-    --pa-primary-fixed-dim: #c0c1ff;
-    --pa-inverse-primary: #c0c1ff;
+    --pa-on-primary-container: #1b2609;
+    --pa-on-primary-fixed: #141c06;
+    --pa-on-primary-fixed-variant: #425b20;
+    --pa-primary-fixed: #dffbd0;
+    --pa-primary-fixed-dim: #c1efaa;
+    --pa-inverse-primary: #c1efaa;
 
     --pa-secondary: #006c49;
     --pa-secondary-container: #6cf8bb;
@@ -46,7 +46,7 @@
     --pa-surface-container-highest: #e3e2e1;
     --pa-surface-variant: #e3e2e1;
     --pa-surface-warm: #fdfcfb;
-    --pa-surface-tint: #494bd6;
+    --pa-surface-tint: #698d35;
     --pa-on-surface: #1a1c1c;
     --pa-on-surface-variant: #464554;
     --pa-inverse-surface: #2f3130;
@@ -252,13 +252,13 @@ body {
 .pa-btn-primary {
     background-color: var(--pa-primary);
     color: var(--pa-on-primary);
-    box-shadow: 0 2px 8px rgba(70, 72, 212, 0.2);
+    box-shadow: 0 2px 8px rgba(105, 141, 53, 0.2);
 }
 
 .pa-btn-primary:hover:not(:disabled) {
     background-color: var(--pa-on-primary-fixed-variant);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(70, 72, 212, 0.3);
+    box-shadow: 0 4px 12px rgba(105, 141, 53, 0.3);
 }
 
 .pa-btn-primary:active:not(:disabled) {
@@ -405,7 +405,7 @@ body {
 .pa-input-text:focus {
     outline: none;
     border-color: var(--pa-primary);
-    box-shadow: 0 0 0 3px rgba(70, 72, 212, 0.1);
+    box-shadow: 0 0 0 3px rgba(105, 141, 53, 0.1);
 }
 
 /* ── Tables ── */
@@ -450,61 +450,15 @@ body {
     background-color: var(--pa-surface-container-low);
 }
 
-/* ── Sidebar Navigation (Desktop) ── */
-.pa-sidebar {
-    display: none;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 16rem;
-    height: 100vh;
-    background-color: var(--pa-surface-container-low);
-    border-right: 1px solid rgba(199, 196, 215, 0.3);
-    padding: 1rem;
-    z-index: 40;
-    flex-direction: column;
-    gap: 0.5rem;
-}
+/* ── Sidebar Removed in favor of Topbar ── */
 
-@media (min-width: 768px) {
-    .pa-sidebar { display: flex; }
-}
-
-.pa-sidebar-brand {
+.pa-topbar-nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 1.5rem 1rem;
-}
-
-.pa-sidebar-brand img {
-    height: 32px;
-    width: auto;
-}
-
-.pa-sidebar-brand-title {
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 28px;
-    color: var(--pa-primary);
-}
-
-.pa-sidebar-brand-subtitle {
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 16px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--pa-on-surface-variant);
-}
-
-.pa-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 15px;
+    gap: 8px;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--pa-on-surface-variant);
     text-decoration: none;
@@ -512,17 +466,17 @@ body {
     cursor: pointer;
 }
 
-.pa-nav-item:hover {
+.pa-topbar-nav-item:hover {
     background-color: var(--pa-surface-variant);
 }
 
-.pa-nav-item.active {
+.pa-topbar-nav-item.active {
     background-color: var(--pa-primary-container);
     color: var(--pa-on-primary-container);
     font-weight: 700;
 }
 
-.pa-nav-item.active .material-symbols-outlined {
+.pa-topbar-nav-item.active .material-symbols-outlined {
     font-variation-settings: 'FILL' 1;
 }
 
@@ -544,7 +498,7 @@ body {
 
 @media (min-width: 768px) {
     .pa-topbar {
-        padding-left: calc(16rem + var(--pa-margin-desktop));
+        padding-left: var(--pa-margin-desktop);
         padding-right: var(--pa-margin-desktop);
     }
 }
@@ -576,20 +530,37 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--pa-text-muted);
     text-decoration: none;
-    padding: 4px 16px;
-    border-radius: 9999px;
+    padding: 6px 0;
     transition: all 0.15s ease;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.pa-bottom-nav-item .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 32px;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+
+.pa-bottom-nav-item.active .icon-wrapper {
+    background-color: var(--pa-primary-container);
+    color: var(--pa-on-primary-container);
 }
 
 .pa-bottom-nav-item.active {
-    background-color: var(--pa-primary-container);
-    color: var(--pa-on-primary-container);
+    color: var(--pa-on-surface);
 }
 
 .pa-bottom-nav-item.active .material-symbols-outlined {
@@ -597,7 +568,6 @@ body {
 }
 
 .pa-bottom-nav-item span.pa-nav-label {
-    margin-top: 2px;
     font-size: 10px;
 }
 
@@ -613,7 +583,7 @@ body {
 
 @media (min-width: 768px) {
     .pa-main {
-        margin-left: 16rem;
+        margin-left: 0;
         padding-left: var(--pa-margin-desktop);
         padding-right: var(--pa-margin-desktop);
         padding-top: 96px;
@@ -707,9 +677,9 @@ body {
 }
 
 @keyframes pa-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(70, 72, 212, 0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(70, 72, 212, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(70, 72, 212, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(105, 141, 53, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(105, 141, 53, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(105, 141, 53, 0); }
 }
 
 /* ── Settlement ── */
@@ -792,7 +762,7 @@ input[type="tel"]:focus,
 select:focus,
 textarea:focus {
     border-color: var(--pa-primary) !important;
-    box-shadow: 0 0 0 3px rgba(70, 72, 212, 0.1) !important;
+    box-shadow: 0 0 0 3px rgba(105, 141, 53, 0.1) !important;
     outline: none !important;
 }
 

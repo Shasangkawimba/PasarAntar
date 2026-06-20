@@ -1,0 +1,124 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img "Pasar Antar" [ref=e6]
+      - generic [ref=e7]: Pasar Antar
+    - navigation [ref=e8]:
+      - link "Home" [ref=e9] [cursor=pointer]:
+        - /url: "#"
+      - link "Cara Kerja" [ref=e10] [cursor=pointer]:
+        - /url: "#how-it-works"
+      - link "Untuk Joki" [ref=e11] [cursor=pointer]:
+        - /url: "#become-joki"
+    - generic [ref=e13]:
+      - link "Masuk" [ref=e14] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/login
+      - link "Daftar Sekarang" [ref=e15] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: storefront
+          - generic [ref=e21]: Human-Powered Market Delivery
+        - heading "Bahan segar dari pasar tradisional langsung ke rumah Anda." [level=1] [ref=e22]:
+          - text: Bahan segar dari
+          - generic [ref=e23]:
+            - text: pasar tradisional
+            - img [ref=e24]
+          - text: langsung ke rumah Anda.
+        - paragraph [ref=e26]: Lewati keramaian pagi hari. Joki Pasar kami memilihkan sayur, daging, dan bumbu segar langsung dari pedagang lokal terpercaya, menjamin kualitas dan harga pasar asli.
+        - generic [ref=e27]:
+          - link "shopping_basket Mulai Belanja" [ref=e28] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/register
+            - generic [ref=e29]: shopping_basket
+            - text: Mulai Belanja
+          - link "motorcycle Menjadi Joki" [ref=e30] [cursor=pointer]:
+            - /url: "#become-joki"
+            - generic [ref=e31]: motorcycle
+            - text: Menjadi Joki
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e35]: person
+            - generic [ref=e37]: person
+            - generic [ref=e39]: person
+          - generic [ref=e40]: 5,000+ tetangga senang
+      - generic [ref=e41]:
+        - img "Pasar Antar Logo" [ref=e44]
+        - generic [ref=e45]:
+          - generic [ref=e47]: storefront
+          - generic [ref=e48]:
+            - generic [ref=e49]: Status
+            - generic [ref=e50]: Belanja di Pasar Senen
+        - generic [ref=e51]:
+          - generic [ref=e53]: check_circle
+          - generic [ref=e54]:
+            - generic [ref=e55]: Dikirim
+            - generic [ref=e56]: Bahan Segar Tiba
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - heading "Bagaimana Pasar Antar Bekerja" [level=2] [ref=e59]
+        - paragraph [ref=e60]: Koneksi mulus antara dapur Anda, joki belanja ahli, dan pasar tradisional penuh semangat.
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e64]: map
+          - heading "1. Pilih Pasar" [level=3] [ref=e65]
+          - paragraph [ref=e66]: Pilih pasar tradisional lokal favorit Anda. Kami bermitra dengan pasar-pasar utama untuk memastikan Anda mendapatkan apa yang biasa dibeli.
+          - generic [ref=e67]:
+            - generic [ref=e69]:
+              - generic [ref=e70]: store
+              - generic [ref=e71]: Pasar Senen
+            - generic [ref=e74]:
+              - generic [ref=e75]: store
+              - generic [ref=e76]: Pasar Kramat Jati
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e80]: shopping_cart
+            - heading "2. Joki Belanja Langsung" [level=3] [ref=e81]
+            - paragraph [ref=e82]: Joki personal shopper berpengalaman menelusuri pasar, memilih bahan terbaik dan bernegosiasi harga seperti Anda sendiri.
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - generic [ref=e85]: Daftar Belanja Budi
+                - generic [ref=e86]: AKTIF
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - generic [ref=e89]: check_box
+                  - generic [ref=e90]: Ayam Kampung (1 ekor)
+                - generic [ref=e91]:
+                  - generic [ref=e92]: check_box_outline_blank
+                  - generic [ref=e93]: Bawang Merah (500g)
+                - generic [ref=e94]:
+                  - generic [ref=e95]: check_box_outline_blank
+                  - generic [ref=e96]: Cabai Rawit Merah (250g)
+          - generic [ref=e100]: storefront
+        - generic [ref=e101]:
+          - generic [ref=e103]: two_wheeler
+          - generic [ref=e104]:
+            - heading "3. Langsung ke Dapur Anda" [level=3] [ref=e105]
+            - paragraph [ref=e106]: Setelah selesai belanja, Joki segera mengirimkan bahan segar ke pintu rumah Anda. Tanpa gudang perantara, tanpa penundaan. Cuma bahan pasar segar, cepat.
+          - generic [ref=e109]: Estimasi 30-45 menit
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - text: Mitra Pasar & Joki
+        - heading "Hasilkan Pendapatan Sebagai Joki Pasar" [level=3] [ref=e113]
+        - paragraph [ref=e114]: Bergabunglah dengan jaringan kami dan bantu tetangga mendapatkan bahan segar sambil menghasilkan pendapatan yang adil. Jadwal fleksibel, komunitas yang mendukung.
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - text: Pendapatan
+            - generic [ref=e117]: Rp 150K+/hari
+          - generic [ref=e118]:
+            - text: Jadwal
+            - generic [ref=e119]: Fleksibel
+          - generic [ref=e120]:
+            - text: Rating
+            - generic [ref=e121]:
+              - generic [ref=e122]: star
+              - text: 4.9 Rata-rata
+      - link "motorcycle Daftar Sebagai Joki" [ref=e123] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+        - generic [ref=e124]: motorcycle
+        - text: Daftar Sebagai Joki
+  - contentinfo [ref=e125]:
+    - generic [ref=e126]:
+      - generic [ref=e127]: Pasar Antar © 2026
+      - generic [ref=e128]: Laravel v13.16.1 (PHP v8.4.22)

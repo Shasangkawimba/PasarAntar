@@ -1,6 +1,9 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import Dialog from '@/Components/Dialog';
+import Toast from '@/Components/Toast';
+import { useState } from 'react';
 
 interface User { id: number; name: string; email: string; }
 interface Market { id: number; name: string; }
@@ -17,19 +20,29 @@ interface Checklist {
 
 export default function MasterChecklistList({ checklists }: { checklists: Checklist[] }) {
     const { flash } = usePage().props as any;
+    
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: 'info'|'success'|'error' }>({ show: false, message: '', type: 'info' });
+    const [confirmDialog, setConfirmDialog] = useState(false);
 
     const handleGenerate = () => {
-        if (confirm('Jalankan proses agregasi pesanan untuk menghasilkan Master Checklist baru?')) {
-            router.post(route('admin.checklists.generate'), {}, { onSuccess: () => alert('Proses agregasi dimulai di antrean latar belakang.') });
-        }
+        setConfirmDialog(true);
+    };
+
+    const confirmGenerate = () => {
+        router.post(route('admin.checklists.generate'), {}, { 
+            onSuccess: () => {
+                setToast({ show: true, message: 'Proses agregasi dimulai di antrean latar belakang.', type: 'success' });
+            } 
+        });
+        setConfirmDialog(false);
     };
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart' };
-            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run' };
-            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt' };
-            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending' };
+            case 'READY_TO_SHOP': return { bg: 'rgba(249,115,22,0.1)', text: 'var(--pa-status-shopping)', icon: 'shopping_cart', label: 'Siap Belanja' };
+            case 'SHOPPING': return { bg: 'rgba(16,185,129,0.1)', text: 'var(--pa-status-completed)', icon: 'directions_run', label: 'Sedang Belanja' };
+            case 'COMPLETED': return { bg: 'var(--pa-surface-container-low)', text: 'var(--pa-text-muted)', icon: 'task_alt', label: 'Selesai' };
+            default: return { bg: 'var(--pa-surface-variant)', text: 'var(--pa-text-muted)', icon: 'pending', label: 'Pending' };
         }
     };
 
@@ -122,6 +135,31 @@ export default function MasterChecklistList({ checklists }: { checklists: Checkl
                     </div>
                 )}
             </div>
+
+            <Dialog
+                show={confirmDialog}
+                onClose={() => setConfirmDialog(false)}
+                title="Jalankan Agregasi?"
+                icon="info"
+                iconColor="var(--pa-primary)"
+            >
+                <p>Jalankan proses agregasi pesanan untuk menghasilkan Master Checklist baru?</p>
+                <div className="mt-6 flex justify-end gap-3 w-full">
+                    <button type="button" onClick={() => setConfirmDialog(false)} className="pa-btn pa-btn-ghost">
+                        Batal
+                    </button>
+                    <button type="button" onClick={confirmGenerate} className="pa-btn pa-btn-primary">
+                        Ya, Jalankan
+                    </button>
+                </div>
+            </Dialog>
+
+            <Toast 
+                show={toast.show} 
+                message={toast.message} 
+                type={toast.type} 
+                onClose={() => setToast({ ...toast, show: false })} 
+            />
         </AuthenticatedLayout>
     );
 }

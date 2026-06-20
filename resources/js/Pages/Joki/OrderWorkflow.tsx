@@ -3,6 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import ProgressTimeline from '@/Components/ProgressTimeline';
+import Dialog from '@/Components/Dialog';
+import Toast from '@/Components/Toast';
 
 interface User {
     id: number;
@@ -59,6 +61,10 @@ export default function OrderWorkflow({ order }: { order: Order }) {
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
     const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+    
+    // Notifications state
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: 'info'|'success'|'error' }>({ show: false, message: '', type: 'info' });
+    const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; status: string | null; message: string }>({ show: false, status: null, message: '' });
 
     const { data, setData, post, processing, errors, reset } = useForm({
         actual_amount: orderState.actual_amount !== null ? orderState.actual_amount.toString() : '',
@@ -118,11 +124,16 @@ export default function OrderWorkflow({ order }: { order: Order }) {
     const handleStatusUpdate = () => {
         if (!action) return;
         if (action.nextStatus === 'COMPLETED' && !canComplete) {
-            alert('Anda harus mengisi total belanja riil dan mengunggah foto nota belanja terlebih dahulu sebelum menyelesaikan pesanan.');
+            setToast({ show: true, message: 'Isi total belanja riil & upload nota sebelum selesai.', type: 'error' });
             return;
         }
-        if (confirm(action.confirmMessage)) {
-            router.post(route('joki.orders.status', orderState.id), { status: action.nextStatus });
+        setConfirmDialog({ show: true, status: action.nextStatus, message: action.confirmMessage });
+    };
+
+    const confirmStatusUpdate = () => {
+        if (confirmDialog.status) {
+            router.post(route('joki.orders.status', orderState.id), { status: confirmDialog.status });
+            setConfirmDialog({ show: false, status: null, message: '' });
         }
     };
 
@@ -438,17 +449,37 @@ export default function OrderWorkflow({ order }: { order: Order }) {
                 </div>
             </div>
 
-            {/* Zoom Modal */}
+            {/* Image Zoom Modal */}
             {zoomedImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 cursor-zoom-out" onClick={() => setZoomedImage(null)}>
-                    <div className="relative max-w-4xl w-full max-h-screen p-4 flex flex-col items-center">
-                        <button onClick={() => setZoomedImage(null)} className="absolute top-0 right-4 pa-btn pa-btn-secondary bg-white/10 text-white border-0 hover:bg-white/20">
-                            <span className="material-symbols-outlined">close</span> Tutup
-                        </button>
-                        <img src={zoomedImage} alt="Nota Besar" className="max-w-full max-h-[85vh] object-contain rounded-xl mt-12" onClick={e => e.stopPropagation()} />
-                    </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setZoomedImage(null)}>
+                    <img src={zoomedImage} alt="Zoomed Receipt" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
                 </div>
             )}
+
+            <Dialog
+                show={confirmDialog.show}
+                onClose={() => setConfirmDialog({ show: false, status: null, message: '' })}
+                title="Konfirmasi Status"
+                icon="info"
+                iconColor="var(--pa-primary)"
+            >
+                <p>{confirmDialog.message}</p>
+                <div className="mt-6 flex justify-end gap-3 w-full">
+                    <button type="button" onClick={() => setConfirmDialog({ show: false, status: null, message: '' })} className="pa-btn pa-btn-ghost">
+                        Batal
+                    </button>
+                    <button type="button" onClick={confirmStatusUpdate} className="pa-btn pa-btn-primary">
+                        Ya, Lanjutkan
+                    </button>
+                </div>
+            </Dialog>
+
+            <Toast 
+                show={toast.show} 
+                message={toast.message} 
+                type={toast.type} 
+                onClose={() => setToast({ ...toast, show: false })} 
+            />
         </AuthenticatedLayout>
     );
 }
