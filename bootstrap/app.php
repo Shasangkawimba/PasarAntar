@@ -21,6 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
+        // Pengecualian CSRF untuk automasi testing (TestSprite) di environment local/testing
+        $appEnv = env('APP_ENV', 'production');
+        if ($appEnv === 'local' || $appEnv === 'testing') {
+            $middleware->validateCsrfTokens(except: [
+                '*'
+            ]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

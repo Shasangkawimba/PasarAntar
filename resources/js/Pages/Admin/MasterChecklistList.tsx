@@ -29,11 +29,7 @@ export default function MasterChecklistList({ checklists }: { checklists: Checkl
     };
 
     const confirmGenerate = () => {
-        router.post(route('admin.checklists.generate'), {}, { 
-            onSuccess: () => {
-                setToast({ show: true, message: 'Proses agregasi dimulai di antrean latar belakang.', type: 'success' });
-            } 
-        });
+        router.post(route('admin.checklists.generate'));
         setConfirmDialog(false);
     };
 
@@ -67,6 +63,13 @@ export default function MasterChecklistList({ checklists }: { checklists: Checkl
                 <div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
                     <span className="material-symbols-outlined" style={{ color: 'var(--pa-status-completed)' }}>check_circle</span>
                     <span className="pa-body-sm font-semibold" style={{ color: 'var(--pa-status-completed)' }}>{flash.success}</span>
+                </div>
+            )}
+
+            {flash?.info && (
+                <div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                    <span className="material-symbols-outlined" style={{ color: 'rgb(37,99,235)' }}>info</span>
+                    <span className="pa-body-sm font-semibold" style={{ color: 'rgb(30,64,175)' }}>{flash.info}</span>
                 </div>
             )}
 

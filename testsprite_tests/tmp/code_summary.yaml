@@ -1,0 +1,93 @@
+version: "2"
+type: backend
+tech_stack:
+  - PHP
+  - Laravel
+  - PostgreSQL
+  - Redis
+features:
+  - name: Authentication
+    description: User registration, login, and logout using session-based auth
+    files:
+      - routes/auth.php
+      - app/Http/Controllers/Auth/RegisteredUserController.php
+      - app/Http/Controllers/Auth/AuthenticatedSessionController.php
+    endpoints:
+      - method: POST
+        path: /register
+        description: Register a new user
+        auth_required: false
+      - method: POST
+        path: /login
+        description: Login user
+        auth_required: false
+      - method: POST
+        path: /logout
+        description: Logout user
+        auth_required: true
+
+  - name: Order Management
+    description: CRUD and lifecycle management for orders
+    files:
+      - routes/web.php
+      - app/Http/Controllers/OrderController.php
+      - app/Models/Order.php
+    endpoints:
+      - method: GET
+        path: /buyer/orders
+        description: List buyer orders
+        auth_required: true
+      - method: POST
+        path: /buyer/orders
+        description: Create a new order
+        auth_required: true
+      - method: GET
+        path: /joki/orders/available
+        description: List available orders for joki
+        auth_required: true
+      - method: POST
+        path: /joki/orders/{order}/accept
+        description: Joki accepts an order
+        auth_required: true
+      - method: GET
+        path: /joki/orders/assigned
+        description: List orders assigned to joki
+        auth_required: true
+      - method: POST
+        path: /joki/orders/{order}/receipt
+        description: Joki uploads receipt for an order
+        auth_required: true
+      - method: POST
+        path: /joki/orders/{order}/actual-amount
+        description: Joki inputs actual shopping amount
+        auth_required: true
+      - method: POST
+        path: /joki/orders/{order}/status
+        description: Update order status (DELIVERING, COMPLETED)
+        auth_required: true
+
+  - name: Master Checklist Aggregation
+    description: Background processing and management of master checklists
+    files:
+      - routes/web.php
+      - app/Http/Controllers/MasterChecklistController.php
+      - app/Services/AggregationService.php
+    endpoints:
+      - method: GET
+        path: /admin/checklists
+        description: List all master checklists for admin
+        auth_required: true
+      - method: POST
+        path: /admin/checklists/generate
+        description: Trigger master checklist aggregation
+        auth_required: true
+      - method: GET
+        path: /admin/checklists/{checklist}
+        description: Show master checklist detail for admin
+        auth_required: true
+      - method: GET
+        path: /joki/checklists/{checklist}
+        description: Show master checklist detail for joki
+        auth_required: true
+
+known_limitations: []

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "postregistercreatesnewuseraccount",
+    "description": "Test POST /register with valid user data to ensure a new user account is created successfully and a 201 or 200 status is returned."
+  },
+  {
+    "id": "TC002",
+    "title": "postloginauthenticatesuserwithvalidcredentials",
+    "description": "Test POST /login with valid credentials to verify successful authentication and establishment of a session with a 200 response."
+  },
+  {
+    "id": "TC003",
+    "title": "postlogoutterminatesusersession",
+    "description": "Test POST /logout with an active authenticated session to confirm the session is terminated and subsequent access to protected endpoints is denied with 401."
+  },
+  {
+    "id": "TC004",
+    "title": "postbuyerorderscreatesneworder",
+    "description": "Test POST /buyer/orders with valid authenticated buyer data to create a new order and receive a 201 confirmation with order status WAITING_FOR_JOKI."
+  },
+  {
+    "id": "TC005",
+    "title": "getjokiordersavailablelistswaitingorders",
+    "description": "Test GET /joki/orders/available with authenticated joki session to retrieve a list of orders in WAITING_FOR_JOKI status."
+  },
+  {
+    "id": "TC006",
+    "title": "postjokiordersorderacceptassignsorder",
+    "description": "Test POST /joki/orders/{order}/accept to allow a joki to accept an available order, changing its status to ASSIGNED and confirming assignment."
+  },
+  {
+    "id": "TC007",
+    "title": "postjokiordersorderreceiptuploadsreceipt",
+    "description": "Test POST /joki/orders/{order}/receipt to upload a receipt image for an assigned order and receive confirmation of successful upload."
+  },
+  {
+    "id": "TC008",
+    "title": "postjokiordersorderactualamountrecordsfinalspend",
+    "description": "Test POST /joki/orders/{order}/actual-amount to input the actual shopping amount and verify correct settlement calculations for refund or additional payment."
+  },
+  {
+    "id": "TC009",
+    "title": "postjokiordersorderstatusupdatesorderstate",
+    "description": "Test POST /joki/orders/{order}/status to update the order status to DELIVERING and then COMPLETED, verifying correct lifecycle transitions."
+  },
+  {
+    "id": "TC010",
+    "title": "postadminchecklistsgeneratetriggersaggregation",
+    "description": "Test POST /admin/checklists/generate to trigger background aggregation of master checklists and receive a 200 confirmation response."
+  }
+]

@@ -204,7 +204,7 @@ export default function AssignedOrders({ orders }: { orders: Order[] }) {
                                                     <td className="pa-mono" style={{ fontWeight: 600 }}>{formatRupiah(order.estimated_amount)}</td>
                                                     <td><StatusBadge status={order.status} /></td>
                                                     <td className="text-right">
-                                                        <Link href={route('joki.orders.show', order.id)} className="pa-btn pa-btn-ghost pa-btn-sm">
+                                                        <Link href={route('joki.orders.show', order.id)} className="pa-btn pa-btn-secondary pa-btn-sm inline-flex">
                                                             Detail
                                                         </Link>
                                                     </td>

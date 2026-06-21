@@ -89,6 +89,15 @@ class MasterChecklistController extends Controller
     {
         Gate::authorize('generate', MasterChecklist::class);
 
+        $eligibleOrdersCount = \App\Models\Order::where('status', 'ASSIGNED')
+            ->whereNull('master_checklist_id')
+            ->count();
+
+        if ($eligibleOrdersCount === 0) {
+            return redirect()->route('admin.checklists.index')
+                ->with('info', 'Tidak ada pesanan aktif berstatus ASSIGNED yang siap diagregasikan.');
+        }
+
         GenerateMasterChecklistJob::dispatch();
 
         return redirect()->route('admin.checklists.index')

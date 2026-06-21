@@ -1,0 +1,512 @@
+[
+  {
+    "id": "TC001",
+    "title": "Joki completes an order after settlement",
+    "description": "A Joki can finish the full shopping workflow by uploading a receipt, entering the actual amount, and completing the order.",
+    "category": "Joki Order Workflow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open an assigned order"
+      },
+      {
+        "type": "action",
+        "description": "Start shopping for the order"
+      },
+      {
+        "type": "action",
+        "description": "Upload a receipt image"
+      },
+      {
+        "type": "action",
+        "description": "Enter the actual shopping amount"
+      },
+      {
+        "type": "action",
+        "description": "Complete the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is marked completed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Create a buyer order from a market",
+    "description": "This verifies that a buyer can add items, set an estimated budget, and submit a new market order successfully.",
+    "category": "Buyer Create Order",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /orders/create/{market}"
+      },
+      {
+        "type": "action",
+        "description": "Add a product item with quantity and notes"
+      },
+      {
+        "type": "action",
+        "description": "Add another product item with quantity and notes"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid estimated shopping amount"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the created order detail page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new order is shown as created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Joki accepts an available order",
+    "description": "A Joki can open available orders and accept one so it moves into the assigned state.",
+    "category": "Joki Accept Order",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the available orders section"
+      },
+      {
+        "type": "action",
+        "description": "Accept an available order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is shown as assigned"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Log in and land in the correct role experience",
+    "description": "This verifies that a user can sign in and is redirected to the experience that matches their role.",
+    "category": "User Login & Role Redirect",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the role-appropriate page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Joki starts shopping on an assigned order",
+    "description": "A Joki can open an assigned order and move it into shopping so the workflow progresses correctly.",
+    "category": "Joki Order Workflow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open an assigned order"
+      },
+      {
+        "type": "action",
+        "description": "Start shopping for the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order status changes to shopping"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Joki sees accepted orders in assigned orders",
+    "description": "After accepting an order, a Joki can confirm it appears in the assigned orders view.",
+    "category": "Joki Accept Order",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the available orders section"
+      },
+      {
+        "type": "action",
+        "description": "Accept an available order"
+      },
+      {
+        "type": "action",
+        "description": "Open the assigned orders view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the accepted order is listed in assigned orders"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Review buyer order history and open an order detail",
+    "description": "This verifies that a buyer can view order history and open an existing order to inspect its status.",
+    "category": "Buyer Create Order",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view order history"
+      },
+      {
+        "type": "action",
+        "description": "Open one of the listed orders"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order status information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Admin triggers checklist aggregation",
+    "description": "An admin can manually trigger aggregation and see master checklists generated for grouped orders.",
+    "category": "Admin Aggregation Trigger",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the master checklists page"
+      },
+      {
+        "type": "action",
+        "description": "Trigger order aggregation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a generated master checklist is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC009",
+    "title": "Admin opens a generated checklist to inspect grouped orders",
+    "description": "An admin can open a generated master checklist and inspect the grouped orders and items inside it.",
+    "category": "Admin Aggregation Trigger",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the master checklists page"
+      },
+      {
+        "type": "action",
+        "description": "Open a generated master checklist"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify grouped order items are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC010",
+    "title": "Keep order creation blocked when required details are missing",
+    "description": "This verifies that incomplete buyer order information is rejected with validation feedback instead of creating an order.",
+    "category": "Buyer Create Order",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /orders/create/{market}"
+      },
+      {
+        "type": "action",
+        "description": "Add a product item with quantity and notes"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify order validation feedback is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC011",
+    "title": "Joki sees an additional payment when spending more than estimated",
+    "description": "A Joki can review the settlement outcome and see an additional payment when the actual amount exceeds the estimate.",
+    "category": "Joki Order Workflow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open an assigned order"
+      },
+      {
+        "type": "action",
+        "description": "Start shopping for the order"
+      },
+      {
+        "type": "action",
+        "description": "Upload a receipt image"
+      },
+      {
+        "type": "action",
+        "description": "Enter an actual shopping amount higher than the estimate"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an additional payment amount is shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC012",
+    "title": "Browse the welcome page and open the sign-in options",
+    "description": "This verifies that a new visitor can explore the landing page and reach the authentication options from the main call to action.",
+    "category": "Landing Page and Welcome",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Scroll through the page to the feature and market sections"
+      },
+      {
+        "type": "action",
+        "description": "Scroll through the page to the user ratings section"
+      },
+      {
+        "type": "action",
+        "description": "Click the primary call to action to continue"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sign-in and registration options are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC013",
+    "title": "Joki sees a refund when spending less than estimated",
+    "description": "A Joki can review the settlement outcome and see a refund when the actual amount is below the estimate.",
+    "category": "Joki Order Workflow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open an assigned order"
+      },
+      {
+        "type": "action",
+        "description": "Start shopping for the order"
+      },
+      {
+        "type": "action",
+        "description": "Upload a receipt image"
+      },
+      {
+        "type": "action",
+        "description": "Enter an actual shopping amount lower than the estimate"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a refund amount is shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC014",
+    "title": "Reach the registration page from the welcome page",
+    "description": "This verifies that a visitor can move from the landing page into the registration flow.",
+    "category": "Landing Page and Welcome",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click the registration option from the main call to action area"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the registration page is displayed"
+      }
+    ],
+    "priority": "Medium"
+  }
+]
