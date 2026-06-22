@@ -27,3 +27,7 @@ Homestead.yaml
 Thumbs.db
 
 testsprite_tests\tmp\config.json
+.playwright-mcp/
+testsprite_tests/
+test.jpg
+PasarAntar.png
