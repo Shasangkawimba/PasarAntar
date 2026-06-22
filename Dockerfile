@@ -16,7 +16,7 @@ RUN npm run build
 # ==========================================
 # STAGE 2: Production PHP + Nginx Container
 # ==========================================
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install Nginx and other system utilities
 RUN apk add --no-cache nginx git unzip curl
