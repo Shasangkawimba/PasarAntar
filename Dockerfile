@@ -10,7 +10,7 @@ COPY resources ./resources
 COPY public ./public
 
 # Install dependencies and build assets
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN npm run build
 
 # ==========================================
