@@ -24,6 +24,9 @@ RUN apk add --no-cache nginx git unzip curl
 # Install PHP Extension Installer helper
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
+# Limit compilation parallel jobs to prevent OOM (Out of Memory)
+ENV MAKEFLAGS="-j2"
+
 # Install PHP extensions required by Laravel, PostgreSQL, and Redis
 RUN install-php-extensions pdo_pgsql pgsql redis bcmath gd zip intl opcache pcntl
 
