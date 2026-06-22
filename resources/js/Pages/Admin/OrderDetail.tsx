@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import ProgressTimeline from '@/Components/ProgressTimeline';
 
@@ -25,6 +25,14 @@ interface Order {
     items: OrderItem[];
     receipts: Receipt[];
     delivery_proof_url: string | null;
+    complaint?: {
+        id: number;
+        reason: string;
+        description: string;
+        status: string;
+        admin_notes: string | null;
+        created_at: string;
+    } | null;
 }
 
 export default function OrderDetail({ order, activityLogs }: { order: Order; activityLogs: ActivityLogEntry[] }) {
@@ -32,6 +40,20 @@ export default function OrderDetail({ order, activityLogs }: { order: Order; act
     const [logsState, setLogsState] = useState<ActivityLogEntry[]>(activityLogs);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+    const { data: complaintData, setData: setComplaintData, post: postComplaint, processing: isProcessingComplaint } = useForm({
+        status: 'RESOLVED',
+        admin_notes: orderState.complaint?.admin_notes || '',
+    });
+
+    const handleComplaintSubmit = (e: React.FormEvent, status: string) => {
+        e.preventDefault();
+        setComplaintData('status', status);
+        // Wait for state update using a small timeout, or pass status directly to post
+        setTimeout(() => {
+            postComplaint(route('admin.complaints.status', orderState.complaint!.id));
+        }, 0);
+    };
 
     useEffect(() => setOrderState(order), [order]);
     useEffect(() => setLogsState(activityLogs), [activityLogs]);
@@ -210,6 +232,77 @@ export default function OrderDetail({ order, activityLogs }: { order: Order; act
                             ))}
                         </div>
                     </section>
+
+                    {/* Complaint Panel */}
+                    {orderState.complaint && (
+                        <section className="pa-bento-card-static p-6 md:p-8" style={{ border: '2px solid var(--pa-alert-rose)' }}>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="pa-headline-md flex items-center gap-2" style={{ color: 'var(--pa-alert-rose)' }}>
+                                    <span className="material-symbols-outlined">warning</span>
+                                    Aduan Pelanggan
+                                </h3>
+                                <span className="pa-mono pa-label-caps px-3 py-1 rounded-full text-white" style={{ 
+                                    backgroundColor: orderState.complaint.status === 'RESOLVED' ? 'var(--pa-status-completed)' 
+                                        : orderState.complaint.status === 'REJECTED' ? 'var(--pa-alert-rose)' 
+                                        : 'var(--pa-status-shopping)'
+                                }}>
+                                    {orderState.complaint.status}
+                                </span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-4 mb-6">
+                                <div>
+                                    <span className="pa-label-caps block text-[var(--pa-text-muted)] mb-1">Alasan Pengaduan</span>
+                                    <div className="pa-body-lg font-semibold text-[var(--pa-text-main)]">{orderState.complaint.reason}</div>
+                                </div>
+                                <div>
+                                    <span className="pa-label-caps block text-[var(--pa-text-muted)] mb-1">Detail Penjelasan</span>
+                                    <p className="pa-body-sm text-[var(--pa-text-main)] bg-[var(--pa-surface-variant)] p-4 rounded-xl">{orderState.complaint.description}</p>
+                                </div>
+                            </div>
+
+                            {orderState.complaint.status === 'PENDING' ? (
+                                <form onSubmit={(e) => e.preventDefault()} className="border-t border-[var(--pa-surface-variant)] pt-6">
+                                    <div className="mb-4">
+                                        <label className="pa-label-caps block mb-2 text-[var(--pa-text-main)]">Catatan Penanganan (Opsional)</label>
+                                        <textarea
+                                            className="w-full rounded-xl pa-input"
+                                            placeholder="Tambahkan catatan mengapa aduan ini disetujui atau ditolak..."
+                                            value={complaintData.admin_notes}
+                                            onChange={e => setComplaintData('admin_notes', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex gap-3 justify-end">
+                                        <button 
+                                            type="button" 
+                                            onClick={(e) => handleComplaintSubmit(e, 'REJECTED')}
+                                            disabled={isProcessingComplaint}
+                                            className="pa-btn pa-btn-secondary text-[var(--pa-alert-rose)]"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">cancel</span>
+                                            Tolak Keluhan
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={(e) => handleComplaintSubmit(e, 'RESOLVED')}
+                                            disabled={isProcessingComplaint}
+                                            className="pa-btn" style={{ backgroundColor: 'var(--pa-status-completed)', color: 'white' }}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                                            Setujui Keluhan
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                orderState.complaint.admin_notes && (
+                                    <div className="border-t border-[var(--pa-surface-variant)] pt-6 mt-4">
+                                        <span className="pa-label-caps block text-[var(--pa-text-muted)] mb-2">Catatan Admin</span>
+                                        <p className="pa-body-sm text-[var(--pa-text-main)] italic">{orderState.complaint.admin_notes}</p>
+                                    </div>
+                                )
+                            )}
+                        </section>
+                    )}
                 </div>
 
                 {/* Right Column (4 cols) */}

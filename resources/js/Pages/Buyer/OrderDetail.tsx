@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import ProgressTimeline from '@/Components/ProgressTimeline';
+import Modal from '@/Components/Modal';
+import InputError from '@/Components/InputError';
 
 interface Market {
     id: number;
@@ -37,12 +39,41 @@ interface Order {
     items: OrderItem[];
     receipts: Receipt[];
     delivery_proof_url: string | null;
+    complaint?: {
+        id: number;
+        reason: string;
+        description: string;
+        status: string;
+        admin_notes: string | null;
+        created_at: string;
+    } | null;
 }
 
-export default function OrderDetail({ order }: { order: Order }) {
+export default function OrderDetail({ order, completedAt }: { order: Order; completedAt?: string | null }) {
     const [orderState, setOrderState] = useState<Order>(order);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+    const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
+    const { data: complaintData, setData: setComplaintData, post: postComplaint, processing: isComplainting, errors: complaintErrors, reset: resetComplaint } = useForm({
+        reason: 'Barang tidak sampai',
+        description: '',
+    });
+
+    const isComplaintEligible = orderState.status === 'COMPLETED' 
+        && !orderState.complaint 
+        && completedAt 
+        && (new Date().getTime() - new Date(completedAt).getTime()) <= 24 * 60 * 60 * 1000;
+
+    const handleComplaintSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        postComplaint(route('complaints.store', orderState.id), {
+            onSuccess: () => {
+                setIsComplaintModalOpen(false);
+                resetComplaint();
+            }
+        });
+    };
 
     useEffect(() => setOrderState(order), [order]);
 
@@ -127,8 +158,65 @@ export default function OrderDetail({ order }: { order: Order }) {
                 </div>
                 <div className="flex gap-2">
                     <StatusBadge status={orderState.status} />
+                    {isComplaintEligible && (
+                        <button onClick={() => setIsComplaintModalOpen(true)} className="pa-btn pa-btn-danger pa-btn-sm flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">warning</span>
+                            Laporkan Masalah
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* Complaint Banner */}
+            {orderState.complaint && (
+                <div className="mb-6 rounded-xl p-4 md:p-6" style={{ 
+                    backgroundColor: orderState.complaint.status === 'RESOLVED' ? 'rgba(16,185,129,0.1)' 
+                        : orderState.complaint.status === 'REJECTED' ? 'rgba(225,29,72,0.1)' 
+                        : 'rgba(245,158,11,0.1)',
+                    border: `1px solid ${orderState.complaint.status === 'RESOLVED' ? 'var(--pa-status-completed)' 
+                        : orderState.complaint.status === 'REJECTED' ? 'var(--pa-alert-rose)' 
+                        : 'var(--pa-status-shopping)'}`
+                }}>
+                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="material-symbols-outlined" style={{ 
+                                    color: orderState.complaint.status === 'RESOLVED' ? 'var(--pa-status-completed)' 
+                                        : orderState.complaint.status === 'REJECTED' ? 'var(--pa-alert-rose)' 
+                                        : 'var(--pa-status-shopping)'
+                                }}>
+                                    {orderState.complaint.status === 'RESOLVED' ? 'check_circle' 
+                                        : orderState.complaint.status === 'REJECTED' ? 'cancel' 
+                                        : 'pending'}
+                                </span>
+                                <h3 className="pa-headline-md font-bold" style={{ 
+                                    color: orderState.complaint.status === 'RESOLVED' ? 'var(--pa-status-completed)' 
+                                        : orderState.complaint.status === 'REJECTED' ? 'var(--pa-alert-rose)' 
+                                        : 'var(--pa-status-shopping)'
+                                }}>
+                                    Aduan: {orderState.complaint.reason}
+                                </h3>
+                            </div>
+                            <p className="pa-body-sm text-[var(--pa-text-main)] max-w-2xl">{orderState.complaint.description}</p>
+                            
+                            {orderState.complaint.admin_notes && (
+                                <div className="mt-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                                    <span className="pa-label-caps block text-[var(--pa-text-muted)] mb-1">Catatan Admin</span>
+                                    <p className="pa-body-sm">{orderState.complaint.admin_notes}</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="pa-mono pa-label-caps px-3 py-1 rounded-full shrink-0" style={{ 
+                            backgroundColor: orderState.complaint.status === 'RESOLVED' ? 'var(--pa-status-completed)' 
+                                : orderState.complaint.status === 'REJECTED' ? 'var(--pa-alert-rose)' 
+                                : 'var(--pa-status-shopping)',
+                            color: 'white'
+                        }}>
+                            {orderState.complaint.status}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8">
                 {/* Left Column (8 cols) */}
@@ -312,6 +400,57 @@ export default function OrderDetail({ order }: { order: Order }) {
                     </div>
                 </div>
             )}
+
+            {/* Complaint Modal */}
+            <Modal show={isComplaintModalOpen} onClose={() => !isComplainting && setIsComplaintModalOpen(false)}>
+                <div className="p-6">
+                    <h2 className="pa-headline-lg mb-4 text-[var(--pa-alert-rose)] flex items-center gap-2">
+                        <span className="material-symbols-outlined">warning</span>
+                        Laporkan Masalah
+                    </h2>
+                    <p className="pa-body-sm text-[var(--pa-text-muted)] mb-6">
+                        Silakan pilih alasan pengaduan dan ceritakan kronologinya. Pengaduan hanya dapat dilakukan 1x24 jam setelah pesanan selesai.
+                    </p>
+
+                    <form onSubmit={handleComplaintSubmit} className="flex flex-col gap-4">
+                        <div>
+                            <label className="pa-label-caps block mb-2 text-[var(--pa-text-main)]">Alasan Pengaduan</label>
+                            <select
+                                className="w-full rounded-xl pa-input"
+                                value={complaintData.reason}
+                                onChange={e => setComplaintData('reason', e.target.value)}
+                                required
+                            >
+                                <option value="Barang tidak sampai">Barang tidak sampai</option>
+                                <option value="Barang rusak atau kurang">Barang rusak atau kurang</option>
+                                <option value="Nominal nota tidak sesuai">Nominal nota tidak sesuai</option>
+                            </select>
+                            <InputError message={complaintErrors.reason} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <label className="pa-label-caps block mb-2 text-[var(--pa-text-main)]">Detail Penjelasan</label>
+                            <textarea
+                                className="w-full rounded-xl pa-input min-h-[100px]"
+                                placeholder="Jelaskan detail masalah yang Anda alami..."
+                                value={complaintData.description}
+                                onChange={e => setComplaintData('description', e.target.value)}
+                                required
+                            />
+                            <InputError message={complaintErrors.description} className="mt-2" />
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--pa-surface-variant)' }}>
+                            <button type="button" onClick={() => setIsComplaintModalOpen(false)} className="pa-btn pa-btn-secondary" disabled={isComplainting}>
+                                Batal
+                            </button>
+                            <button type="submit" className="pa-btn pa-btn-danger" disabled={isComplainting}>
+                                {isComplainting ? 'Mengirim...' : 'Kirim Aduan'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

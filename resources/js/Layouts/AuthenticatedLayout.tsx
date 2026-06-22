@@ -15,6 +15,7 @@ export default function Authenticated({
     const isJokiChecklist = route().current('joki.checklists.index') || route().current('joki.checklists.show');
     const isAdminOrder = route().current('admin.orders.index') || route().current('admin.orders.show');
     const isAdminChecklist = route().current('admin.checklists.index') || route().current('admin.checklists.show');
+    const isAdminComplaint = route().current('admin.complaints.index') || route().current('admin.complaints.status');
     const isProfile = route().current('profile.edit');
 
     const navItems = (() => {
@@ -30,6 +31,7 @@ export default function Authenticated({
         if (user.role === 'admin') return [
             { href: route('admin.orders.index'), icon: 'list_alt', label: 'Semua Pesanan', active: !!isAdminOrder },
             { href: route('admin.checklists.index'), icon: 'checklist', label: 'Checklist', active: !!isAdminChecklist },
+            { href: route('admin.complaints.index'), icon: 'warning', label: 'Pengaduan', active: !!isAdminComplaint },
         ];
         return [];
     })();

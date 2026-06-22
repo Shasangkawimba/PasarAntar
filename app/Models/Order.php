@@ -98,4 +98,12 @@ class Order extends Model
     {
         return $this->hasMany(Receipt::class);
     }
+
+    /**
+     * Get the complaint associated with this order.
+     */
+    public function complaint()
+    {
+        return $this->hasOne(Complaint::class);
+    }
 }

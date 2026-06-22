@@ -17,6 +17,7 @@ Route::get('/', function () {
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MasterChecklistController;
+use App\Http\Controllers\ComplaintController;
 use Illuminate\Http\Request;
 
 Route::get('/dashboard', function (Request $request) {
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create/{market}', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+        Route::post('/orders/{order}/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
     });
 
     // Shared routes between Buyer and Joki
@@ -55,6 +57,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/checklists', [MasterChecklistController::class, 'adminIndex'])->name('admin.checklists.index');
         Route::get('/admin/checklists/{checklist}', [MasterChecklistController::class, 'adminShow'])->name('admin.checklists.show');
         Route::post('/admin/checklists/generate', [MasterChecklistController::class, 'triggerAggregation'])->name('admin.checklists.generate');
+        Route::get('/admin/complaints', [ComplaintController::class, 'adminIndex'])->name('admin.complaints.index');
+        Route::post('/admin/complaints/{complaint}/status', [ComplaintController::class, 'adminUpdateStatus'])->name('admin.complaints.status');
     });
 
     // Joki routes

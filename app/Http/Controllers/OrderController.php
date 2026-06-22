@@ -75,10 +75,21 @@ class OrderController extends Controller
     {
         Gate::authorize('view', $order);
 
-        $order->load(['market', 'items', 'receipts.uploader', 'joki']);
+        $order->load(['market', 'items', 'receipts.uploader', 'joki', 'complaint']);
+
+        $completedAt = null;
+        if ($order->status === 'COMPLETED') {
+            $completionLog = \App\Models\ActivityLog::where('metadata->order_id', $order->id)
+                ->where('action', 'STATUS_CHANGED')
+                ->where('metadata->new_status', 'COMPLETED')
+                ->latest()
+                ->first();
+            $completedAt = $completionLog ? $completionLog->created_at : $order->updated_at;
+        }
 
         return Inertia::render('Buyer/OrderDetail', [
             'order' => $order,
+            'completedAt' => $completedAt,
         ]);
     }
 
@@ -105,7 +116,7 @@ class OrderController extends Controller
     {
         Gate::authorize('view', $order);
 
-        $order->load(['buyer', 'market', 'items', 'receipts.uploader', 'joki']);
+        $order->load(['buyer', 'market', 'items', 'receipts.uploader', 'joki', 'complaint']);
 
         $activityLogs = ActivityLog::where('metadata->order_id', $order->id)
             ->with('user')
