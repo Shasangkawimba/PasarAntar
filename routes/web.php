@@ -64,6 +64,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/markets', [MarketController::class, 'adminIndex'])->name('admin.markets.index');
         Route::post('/admin/markets', [MarketController::class, 'store'])->name('admin.markets.store');
         Route::patch('/admin/markets/{market}/toggle', [MarketController::class, 'toggleStatus'])->name('admin.markets.toggle');
+
+        // Admin User Management
+        Route::get('/admin/users', [\App\Http\Controllers\UserController::class, 'adminIndex'])->name('admin.users.index');
+        Route::patch('/admin/users/{user}/toggle', [\App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.users.toggle');
     });
 
     // Joki routes

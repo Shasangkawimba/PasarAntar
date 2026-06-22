@@ -121,47 +121,91 @@ export default function MarketList({ markets }: { markets: Market[] }) {
                                 <p className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Tambahkan pasar pertama Anda melalui form di samping.</p>
                             </div>
                         ) : (
-                            <div className="pa-table-container border-0 shadow-none rounded-none">
-                                <table className="pa-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Nama Pasar</th>
-                                            <th>Alamat</th>
-                                            <th className="text-center">Status</th>
-                                            <th className="text-right">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {markets.map((market) => (
-                                            <tr key={market.id}>
-                                                <td className="pa-mono" style={{ color: 'var(--pa-text-muted)' }}>#{market.id}</td>
-                                                <td style={{ fontWeight: 600 }}>{market.name}</td>
-                                                <td className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>{market.address}</td>
-                                                <td className="text-center">
+                            <div>
+                                {/* Mobile Card View */}
+                                <div className="block md:hidden border-t border-gray-100">
+                                    {markets.map((market) => (
+                                        <div key={market.id} className="p-5 border-b border-gray-100 bg-white hover:bg-slate-50 transition-colors">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <div className="pa-mono font-bold text-slate-500 text-xs mb-1">#{market.id}</div>
+                                                    <div className="font-bold text-slate-900 text-lg leading-tight">{market.name}</div>
+                                                </div>
+                                                <div className="mt-1">
                                                     {market.is_active ? (
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
                                                             Aktif
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-800">
                                                             Nonaktif
                                                         </span>
                                                     )}
-                                                </td>
-                                                <td className="text-right">
-                                                    <button
-                                                        onClick={() => toggleStatus(market)}
-                                                        className={`pa-btn pa-btn-sm inline-flex ${market.is_active ? 'pa-btn-outline border-red-200 text-red-600 hover:bg-red-50' : 'pa-btn-primary'}`}
-                                                        style={market.is_active ? { color: 'var(--pa-alert-red)', borderColor: 'var(--pa-alert-red)' } : {}}
-                                                    >
-                                                        {market.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                                                    </button>
-                                                </td>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="mb-5 p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                                                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Alamat</div>
+                                                <div className="text-sm text-slate-700 leading-relaxed">{market.address}</div>
+                                            </div>
+                                            
+                                            <button
+                                                onClick={() => toggleStatus(market)}
+                                                className={`pa-btn pa-btn-full flex justify-center items-center gap-2 ${market.is_active ? 'pa-btn-outline' : 'pa-btn-primary'}`}
+                                                style={market.is_active ? { color: 'var(--pa-alert-red)', borderColor: 'var(--pa-alert-red)' } : {}}
+                                            >
+                                                {market.is_active ? 'Nonaktifkan Pasar' : 'Aktifkan Pasar'}
+                                                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                                                    {market.is_active ? 'block' : 'check_circle'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block pa-table-container border-0 shadow-none rounded-none">
+                                    <table className="pa-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nama Pasar</th>
+                                                <th>Alamat</th>
+                                                <th className="text-center">Status</th>
+                                                <th className="text-right">Aksi</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {markets.map((market) => (
+                                                <tr key={market.id}>
+                                                    <td className="pa-mono" style={{ color: 'var(--pa-text-muted)' }}>#{market.id}</td>
+                                                    <td style={{ fontWeight: 600 }}>{market.name}</td>
+                                                    <td className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>{market.address}</td>
+                                                    <td className="text-center">
+                                                        {market.is_active ? (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                Aktif
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                Nonaktif
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-right">
+                                                        <button
+                                                            onClick={() => toggleStatus(market)}
+                                                            className={`pa-btn pa-btn-sm inline-flex ${market.is_active ? 'pa-btn-outline border-red-200 text-red-600 hover:bg-red-50' : 'pa-btn-primary'}`}
+                                                            style={market.is_active ? { color: 'var(--pa-alert-red)', borderColor: 'var(--pa-alert-red)' } : {}}
+                                                        >
+                                                            {market.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </div>

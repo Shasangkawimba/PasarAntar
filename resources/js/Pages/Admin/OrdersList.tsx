@@ -96,45 +96,88 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
                         <p className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>Saat ini belum ada pesanan belanja yang masuk ke sistem.</p>
                     </div>
                 ) : (
-                    <div className="pa-table-container border-0 shadow-none rounded-none">
-                        <table className="pa-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Pesanan</th>
-                                    <th>Pembeli (Buyer)</th>
-                                    <th>Pasar Tradisional</th>
-                                    <th>Estimasi Deposit</th>
-                                    <th>Status</th>
-                                    <th>Tanggal Buat</th>
-                                    <th className="text-right">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map((order) => (
-                                    <tr key={order.id}>
-                                        <td className="pa-mono" style={{ fontWeight: 700 }}>{order.order_number}</td>
-                                        <td>
-                                            <div style={{ fontWeight: 600 }}>{order.buyer.name}</div>
-                                            <div className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>{order.buyer.email}</div>
-                                        </td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-status-completed)' }}>storefront</span>
-                                                <span style={{ fontWeight: 600 }}>{order.market.name}</span>
+                    <div>
+                        {/* Mobile Card View */}
+                        <div className="block md:hidden border-t border-gray-100">
+                            {orders.map((order) => (
+                                <div key={order.id} className="p-5 border-b border-gray-100 bg-white hover:bg-slate-50 transition-colors">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <div className="pa-mono font-bold text-slate-900 text-lg mb-1">{order.order_number}</div>
+                                            <div className="text-xs font-semibold text-slate-500">{formatDate(order.created_at)}</div>
+                                        </div>
+                                        <div className="mt-1">
+                                            <StatusBadge status={order.status} />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-y-4 gap-x-4 mb-5 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                                        <div>
+                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pembeli</div>
+                                            <div className="font-bold text-slate-800">{order.buyer.name}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Estimasi Deposit</div>
+                                            <div className="pa-mono font-bold text-emerald-600">{formatRupiah(order.estimated_amount)}</div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pasar Tujuan</div>
+                                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                                <span className="material-symbols-outlined text-[16px] text-emerald-500">storefront</span>
+                                                {order.market.name}
                                             </div>
-                                        </td>
-                                        <td className="pa-mono" style={{ fontWeight: 600, color: 'var(--pa-primary)' }}>{formatRupiah(order.estimated_amount)}</td>
-                                        <td><StatusBadge status={order.status} /></td>
-                                        <td className="pa-mono pa-body-sm text-gray-500">{formatDate(order.created_at)}</td>
-                                        <td className="text-right">
-                                            <Link href={route('admin.orders.show', order.id)} className="pa-btn pa-btn-secondary pa-btn-sm inline-flex">
-                                                Detail
-                                            </Link>
-                                        </td>
+                                        </div>
+                                    </div>
+                                    
+                                    <Link href={route('admin.orders.show', order.id)} className="pa-btn pa-btn-secondary pa-btn-full flex justify-center items-center gap-2">
+                                        Lihat Detail Transaksi
+                                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block pa-table-container border-0 shadow-none rounded-none">
+                            <table className="pa-table">
+                                <thead>
+                                    <tr>
+                                        <th>No. Pesanan</th>
+                                        <th>Pembeli (Buyer)</th>
+                                        <th>Pasar Tradisional</th>
+                                        <th>Estimasi Deposit</th>
+                                        <th>Status</th>
+                                        <th>Tanggal Buat</th>
+                                        <th className="text-right">Aksi</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {orders.map((order) => (
+                                        <tr key={order.id}>
+                                            <td className="pa-mono" style={{ fontWeight: 700 }}>{order.order_number}</td>
+                                            <td>
+                                                <div style={{ fontWeight: 600 }}>{order.buyer.name}</div>
+                                                <div className="pa-body-sm" style={{ color: 'var(--pa-text-muted)' }}>{order.buyer.email}</div>
+                                            </td>
+                                            <td>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-status-completed)' }}>storefront</span>
+                                                    <span style={{ fontWeight: 600 }}>{order.market.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="pa-mono" style={{ fontWeight: 600, color: 'var(--pa-primary)' }}>{formatRupiah(order.estimated_amount)}</td>
+                                            <td><StatusBadge status={order.status} /></td>
+                                            <td className="pa-mono pa-body-sm text-gray-500">{formatDate(order.created_at)}</td>
+                                            <td className="text-right">
+                                                <Link href={route('admin.orders.show', order.id)} className="pa-btn pa-btn-secondary pa-btn-sm inline-flex">
+                                                    Detail
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

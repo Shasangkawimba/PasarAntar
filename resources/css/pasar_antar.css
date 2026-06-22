@@ -617,7 +617,7 @@ body {
         margin-left: 0;
         padding-left: var(--pa-margin-desktop);
         padding-right: var(--pa-margin-desktop);
-        padding-top: 96px;
+        padding-top: 140px;
         padding-bottom: var(--pa-margin-desktop);
     }
 }
@@ -780,7 +780,7 @@ textarea {
     background-color: var(--pa-surface-container-lowest) !important;
     color: var(--pa-text-main) !important;
     transition: all 0.2s ease !important;
-    padding: 0.75rem 1rem !important;
+    padding: 0.75rem 1rem;
     font-family: var(--pa-font-family) !important;
     font-size: 16px !important;
 }

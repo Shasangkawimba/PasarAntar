@@ -91,50 +91,99 @@ export default function MasterChecklistList({ checklists }: { checklists: Checkl
                         <button type="button" onClick={handleGenerate} className="pa-btn pa-btn-primary">Jalankan Sekarang</button>
                     </div>
                 ) : (
-                    <div className="pa-table-container border-0 shadow-none rounded-none">
-                        <table className="pa-table">
-                            <thead>
-                                <tr>
-                                    <th>ID Checklist</th>
-                                    <th>Pasar Tujuan</th>
-                                    <th>Joki Ditugaskan</th>
-                                    <th>Total Order</th>
-                                    <th>Status</th>
-                                    <th>Tanggal Dibuat</th>
-                                    <th className="text-right">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {checklists.map((checklist) => {
-                                    const statusInfo = getStatusStyle(checklist.status);
-                                    return (
-                                        <tr key={checklist.id}>
-                                            <td className="pa-mono" style={{ fontWeight: 700 }}>#MC-{checklist.id}</td>
-                                            <td>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-status-completed)' }}>storefront</span>
-                                                    <span style={{ fontWeight: 600 }}>{checklist.market.name}</span>
+                    <div>
+                        {/* Mobile Card View */}
+                        <div className="block md:hidden border-t border-gray-100">
+                            {checklists.map((checklist) => {
+                                const statusInfo = getStatusStyle(checklist.status);
+                                return (
+                                    <div key={checklist.id} className="p-5 border-b border-gray-100 bg-white hover:bg-slate-50 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <div className="pa-mono font-bold text-slate-900 text-lg mb-1">#MC-{checklist.id}</div>
+                                                <div className="text-xs font-semibold text-slate-500">{formatDate(checklist.created_at)}</div>
+                                            </div>
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full pa-label-caps" style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{statusInfo.icon}</span>
+                                                {statusInfo.label}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-y-4 gap-x-4 mb-5 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                                            <div>
+                                                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pasar Tujuan</div>
+                                                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                                    <span className="material-symbols-outlined text-[16px] text-emerald-500">storefront</span>
+                                                    {checklist.market.name}
                                                 </div>
-                                            </td>
-                                            <td style={{ fontWeight: 600 }}>{checklist.joki ? checklist.joki.name : <span className="italic" style={{ color: 'var(--pa-text-muted)' }}>Belum Ditugaskan</span>}</td>
-                                            <td style={{ fontWeight: 600 }}>{checklist.orders_count} Pesanan</td>
-                                            <td>
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full pa-label-caps" style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}>
-                                                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{statusInfo.icon}</span>
-                                                    {statusInfo.label}
-                                                </span>
-                                            </td>
-                                            <td className="pa-mono pa-body-sm text-gray-500">{formatDate(checklist.created_at)}</td>
-                                            <td className="text-right">
-                                                <Link href={route('admin.checklists.show', checklist.id)} className="pa-btn pa-btn-secondary pa-btn-sm inline-flex">
-                                                    Detail
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                            </div>
+                                            <div>
+                                                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Total Order</div>
+                                                <div className="font-bold text-slate-800">{checklist.orders_count} Pesanan</div>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Joki Ditugaskan</div>
+                                                <div className="font-bold text-slate-800">
+                                                    {checklist.joki ? checklist.joki.name : <span className="italic font-normal text-slate-400">Belum Ditugaskan</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <Link href={route('admin.checklists.show', checklist.id)} className="pa-btn pa-btn-secondary pa-btn-full flex justify-center items-center gap-2">
+                                            Lihat Detail Checklist
+                                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+                                        </Link>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block pa-table-container border-0 shadow-none rounded-none">
+                            <table className="pa-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Checklist</th>
+                                        <th>Pasar Tujuan</th>
+                                        <th>Joki Ditugaskan</th>
+                                        <th>Total Order</th>
+                                        <th>Status</th>
+                                        <th>Tanggal Dibuat</th>
+                                        <th className="text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {checklists.map((checklist) => {
+                                        const statusInfo = getStatusStyle(checklist.status);
+                                        return (
+                                            <tr key={checklist.id}>
+                                                <td className="pa-mono" style={{ fontWeight: 700 }}>#MC-{checklist.id}</td>
+                                                <td>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-sm" style={{ color: 'var(--pa-status-completed)' }}>storefront</span>
+                                                        <span style={{ fontWeight: 600 }}>{checklist.market.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ fontWeight: 600 }}>{checklist.joki ? checklist.joki.name : <span className="italic" style={{ color: 'var(--pa-text-muted)' }}>Belum Ditugaskan</span>}</td>
+                                                <td style={{ fontWeight: 600 }}>{checklist.orders_count} Pesanan</td>
+                                                <td>
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full pa-label-caps" style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{statusInfo.icon}</span>
+                                                        {statusInfo.label}
+                                                    </span>
+                                                </td>
+                                                <td className="pa-mono pa-body-sm text-gray-500">{formatDate(checklist.created_at)}</td>
+                                                <td className="text-right">
+                                                    <Link href={route('admin.checklists.show', checklist.id)} className="pa-btn pa-btn-secondary pa-btn-sm inline-flex">
+                                                        Detail
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
