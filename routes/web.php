@@ -59,6 +59,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/checklists/generate', [MasterChecklistController::class, 'triggerAggregation'])->name('admin.checklists.generate');
         Route::get('/admin/complaints', [ComplaintController::class, 'adminIndex'])->name('admin.complaints.index');
         Route::post('/admin/complaints/{complaint}/status', [ComplaintController::class, 'adminUpdateStatus'])->name('admin.complaints.status');
+        
+        // Admin Market Management
+        Route::get('/admin/markets', [MarketController::class, 'adminIndex'])->name('admin.markets.index');
+        Route::post('/admin/markets', [MarketController::class, 'store'])->name('admin.markets.store');
+        Route::patch('/admin/markets/{market}/toggle', [MarketController::class, 'toggleStatus'])->name('admin.markets.toggle');
     });
 
     // Joki routes

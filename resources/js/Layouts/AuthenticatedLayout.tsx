@@ -29,6 +29,7 @@ export default function Authenticated({
             { href: route('joki.checklists.index'), icon: 'checklist', label: 'Checklist', active: !!isJokiChecklist },
         ];
         if (user.role === 'admin') return [
+            { href: route('admin.markets.index'), icon: 'storefront', label: 'Kelola Pasar', active: !!route().current('admin.markets.*') },
             { href: route('admin.orders.index'), icon: 'list_alt', label: 'Semua Pesanan', active: !!isAdminOrder },
             { href: route('admin.checklists.index'), icon: 'checklist', label: 'Checklist', active: !!isAdminChecklist },
             { href: route('admin.complaints.index'), icon: 'warning', label: 'Pengaduan', active: !!isAdminComplaint },

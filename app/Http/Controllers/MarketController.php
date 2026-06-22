@@ -24,4 +24,50 @@ class MarketController extends Controller
             'markets' => $marketsArray,
         ]);
     }
+
+    /**
+     * Display a listing of all markets for Admin.
+     */
+    public function adminIndex(): Response
+    {
+        $markets = Market::orderBy('id', 'desc')->get();
+        return Inertia::render('Admin/MarketList', [
+            'markets' => $markets,
+        ]);
+    }
+
+    /**
+     * Store a newly created market in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:markets,name',
+            'address' => 'required|string',
+        ]);
+
+        Market::create([
+            'name' => $validated['name'],
+            'address' => $validated['address'],
+            'is_active' => true,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::forget('markets:active');
+
+        return redirect()->back()->with('success', 'Pasar berhasil ditambahkan.');
+    }
+
+    /**
+     * Toggle the active status of a market.
+     */
+    public function toggleStatus(Market $market)
+    {
+        $market->update([
+            'is_active' => !$market->is_active,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::forget('markets:active');
+
+        return redirect()->back()->with('success', 'Status pasar berhasil diperbarui.');
+    }
 }
