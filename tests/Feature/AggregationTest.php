@@ -200,6 +200,8 @@ class AggregationTest extends TestCase
     {
         Queue::fake();
 
+        $this->createAssignedOrder($this->joki1, $this->market1);
+
         $response = $this->actingAs($this->admin)
             ->post(route('admin.checklists.generate'));
 

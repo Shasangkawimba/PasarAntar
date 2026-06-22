@@ -143,13 +143,14 @@ class OrderService
      * @param  \App\Models\User  $joki
      * @param  \App\Models\Order  $order
      * @param  string  $newStatus
+     * @param  string|null  $deliveryProofUrl
      * @return \App\Models\Order
      *
      * @throws InvalidStatusTransitionException
      * @throws UnauthorizedAssignmentException
      * @throws SettlementValidationException
      */
-    public function updateStatus(User $joki, Order $order, string $newStatus): Order
+    public function updateStatus(User $joki, Order $order, string $newStatus, ?string $deliveryProofUrl = null): Order
     {
         $allowed = self::TRANSITIONS[$order->status] ?? [];
 
@@ -168,15 +169,21 @@ class OrderService
             if ($order->actual_amount === null) {
                 throw new SettlementValidationException('Pesanan tidak dapat diselesaikan karena nominal riil belanja belum diisi.');
             }
+            if ($deliveryProofUrl === null && $order->delivery_proof_url === null) {
+                throw new SettlementValidationException('Pesanan tidak dapat diselesaikan karena foto bukti penyerahan barang belum diunggah.');
+            }
         }
 
         $activityLog = null;
-        $updatedOrder = DB::transaction(function () use ($joki, $order, $newStatus, &$activityLog) {
+        $updatedOrder = DB::transaction(function () use ($joki, $order, $newStatus, $deliveryProofUrl, &$activityLog) {
             $oldStatus = $order->status;
 
-            $order->update([
-                'status' => $newStatus,
-            ]);
+            $updateData = ['status' => $newStatus];
+            if ($deliveryProofUrl !== null) {
+                $updateData['delivery_proof_url'] = $deliveryProofUrl;
+            }
+
+            $order->update($updateData);
 
             $activityLog = ActivityLog::create([
                 'user_id' => $joki->id,

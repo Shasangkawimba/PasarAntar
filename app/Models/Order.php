@@ -17,7 +17,8 @@ use Illuminate\Support\Str;
     'estimated_amount',
     'actual_amount',
     'refund_amount',
-    'additional_payment'
+    'additional_payment',
+    'delivery_proof_url'
 ])]
 class Order extends Model
 {

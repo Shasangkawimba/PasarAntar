@@ -24,6 +24,7 @@ interface Order {
     joki: User | null;
     items: OrderItem[];
     receipts: Receipt[];
+    delivery_proof_url: string | null;
 }
 
 export default function OrderDetail({ order, activityLogs }: { order: Order; activityLogs: ActivityLogEntry[] }) {
@@ -56,6 +57,7 @@ export default function OrderDetail({ order, activityLogs }: { order: Order; act
                     actual_amount: e.actual_amount,
                     refund_amount: e.refund_amount,
                     additional_payment: e.additional_payment,
+                    delivery_proof_url: e.delivery_proof_url ?? prev.delivery_proof_url,
                 };
                 if (e.assigned_joki_name) {
                     updated.joki = {
@@ -288,6 +290,22 @@ export default function OrderDetail({ order, activityLogs }: { order: Order; act
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Delivery Proof */}
+                    {orderState.status === 'COMPLETED' && orderState.delivery_proof_url && (
+                        <section className="pa-bento-card-static p-6">
+                            <h3 className="pa-headline-md mb-4 flex items-center gap-2">
+                                <span className="material-symbols-outlined" style={{ color: 'var(--pa-status-completed)' }}>verified</span>
+                                Bukti Penyerahan
+                            </h3>
+                            <div className="rounded-xl overflow-hidden cursor-zoom-in relative group" style={{ border: '1px solid var(--pa-surface-variant)' }} onClick={() => setZoomedImage(orderState.delivery_proof_url!)}>
+                                <img src={orderState.delivery_proof_url} alt="Bukti Penyerahan" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                    <span className="material-symbols-outlined text-white" style={{ fontSize: 32 }}>zoom_in</span>
+                                </div>
                             </div>
                         </section>
                     )}

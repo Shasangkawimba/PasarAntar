@@ -199,9 +199,10 @@ class SettlementReceiptTest extends TestCase
         $response = $this->actingAs($this->assignedJoki)
             ->post(route('joki.orders.status', $this->order->id), [
                 'status' => 'COMPLETED',
+                // Explicitly omitting delivery_proof to expect a validation error
             ]);
 
-        $response->assertSessionHasErrors('status');
+        $response->assertSessionHasErrors('delivery_proof');
         $this->assertEquals('DELIVERING', $this->order->refresh()->status);
     }
 
@@ -227,6 +228,7 @@ class SettlementReceiptTest extends TestCase
         $response = $this->actingAs($this->assignedJoki)
             ->post(route('joki.orders.status', $this->order->id), [
                 'status' => 'COMPLETED',
+                'delivery_proof' => UploadedFile::fake()->image('proof.jpg'), // This passes the controller validation, but should fail at the service level (because actual_amount is null)
             ]);
 
         $response->assertSessionHasErrors('status');
@@ -250,6 +252,7 @@ class SettlementReceiptTest extends TestCase
         $response = $this->actingAs($this->assignedJoki)
             ->post(route('joki.orders.status', $this->order->id), [
                 'status' => 'COMPLETED',
+                'delivery_proof' => UploadedFile::fake()->image('proof.jpg'),
             ]);
 
         $response->assertRedirect(route('joki.orders.show', $this->order->id));

@@ -11,6 +11,7 @@ use App\Services\SettlementService;
 use App\Services\ReceiptUploadService;
 use App\Http\Requests\OrderSettleRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -188,9 +189,16 @@ class OrderController extends Controller
 
         $request->validate([
             'status' => ['required', 'string'],
+            'delivery_proof' => ['required_if:status,COMPLETED', 'image', 'max:5120'],
         ]);
 
-        $this->orderService->updateStatus($request->user(), $order, $request->input('status'));
+        $deliveryProofUrl = null;
+        if ($request->input('status') === 'COMPLETED' && $request->hasFile('delivery_proof')) {
+            $path = $request->file('delivery_proof')->store('delivery_proofs', 'public');
+            $deliveryProofUrl = Storage::url($path);
+        }
+
+        $this->orderService->updateStatus($request->user(), $order, $request->input('status'), $deliveryProofUrl);
 
         return redirect()->route('joki.orders.show', $order->id)
             ->with('success', 'Status pesanan berhasil diperbarui.');

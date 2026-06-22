@@ -47,6 +47,7 @@ interface Order {
     market: Market;
     items: OrderItem[];
     receipts: Receipt[];
+    delivery_proof_url: string | null;
 }
 
 const STATUS_ACTIONS: Record<string, { label: string; nextStatus: string; confirmMessage: string }> = {
@@ -61,6 +62,7 @@ export default function OrderWorkflow({ order }: { order: Order }) {
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
     const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+    const [deliveryProofPreview, setDeliveryProofPreview] = useState<string | null>(null);
     
     // Notifications state
     const [toast, setToast] = useState<{ show: boolean; message: string; type: 'info'|'success'|'error' }>({ show: false, message: '', type: 'info' });
@@ -69,6 +71,11 @@ export default function OrderWorkflow({ order }: { order: Order }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         actual_amount: orderState.actual_amount !== null ? orderState.actual_amount.toString() : '',
         receipt: null as File | null,
+    });
+
+    const { data: completeData, setData: setCompleteData, post: postComplete, processing: processingComplete, errors: errorsComplete, reset: resetComplete } = useForm({
+        status: 'COMPLETED',
+        delivery_proof: null as File | null,
     });
 
     useEffect(() => {
@@ -97,6 +104,7 @@ export default function OrderWorkflow({ order }: { order: Order }) {
                     actual_amount: e.actual_amount,
                     refund_amount: e.refund_amount,
                     additional_payment: e.additional_payment,
+                    delivery_proof_url: e.delivery_proof_url ?? prev.delivery_proof_url,
                 };
                 if (e.receipts) updated.receipts = e.receipts;
                 return updated;
@@ -130,11 +138,28 @@ export default function OrderWorkflow({ order }: { order: Order }) {
         setConfirmDialog({ show: true, status: action.nextStatus, message: action.confirmMessage });
     };
 
-    const confirmStatusUpdate = () => {
-        if (confirmDialog.status) {
-            router.post(route('joki.orders.status', orderState.id), { status: confirmDialog.status });
-            setConfirmDialog({ show: false, status: null, message: '' });
+    const confirmStatusUpdate = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (confirmDialog.status === 'COMPLETED') {
+            postComplete(route('joki.orders.status', orderState.id), {
+                forceFormData: true,
+                onSuccess: () => {
+                    setConfirmDialog({ show: false, status: null, message: '' });
+                    resetComplete();
+                    setDeliveryProofPreview(null);
+                }
+            });
+        } else if (confirmDialog.status) {
+            router.post(route('joki.orders.status', orderState.id), { status: confirmDialog.status }, {
+                onSuccess: () => setConfirmDialog({ show: false, status: null, message: '' })
+            });
         }
+    };
+
+    const handleCloseDialog = () => {
+        setConfirmDialog({ show: false, status: null, message: '' });
+        resetComplete();
+        setDeliveryProofPreview(null);
     };
 
     const handleSubmitSettlement = (e: React.FormEvent) => {
@@ -458,20 +483,49 @@ export default function OrderWorkflow({ order }: { order: Order }) {
 
             <Dialog
                 show={confirmDialog.show}
-                onClose={() => setConfirmDialog({ show: false, status: null, message: '' })}
+                onClose={handleCloseDialog}
                 title="Konfirmasi Status"
                 icon="info"
                 iconColor="var(--pa-primary)"
             >
-                <p>{confirmDialog.message}</p>
-                <div className="mt-6 flex justify-end gap-3 w-full">
-                    <button type="button" onClick={() => setConfirmDialog({ show: false, status: null, message: '' })} className="pa-btn pa-btn-ghost">
-                        Batal
-                    </button>
-                    <button type="button" onClick={confirmStatusUpdate} className="pa-btn pa-btn-primary">
-                        Ya, Lanjutkan
-                    </button>
-                </div>
+                <form onSubmit={confirmStatusUpdate}>
+                    <p>{confirmDialog.message}</p>
+
+                    {confirmDialog.status === 'COMPLETED' && (
+                        <div className="mt-4">
+                            <label className="pa-body-sm block mb-1" style={{ fontWeight: 600 }}>Foto Bukti Penyerahan Barang</label>
+                            <input
+                                type="file"
+                                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                accept="image/*"
+                                onChange={e => {
+                                    const files = e.target.files;
+                                    if (files && files.length > 0) {
+                                        setCompleteData('delivery_proof', files[0]);
+                                        setDeliveryProofPreview(URL.createObjectURL(files[0]));
+                                    }
+                                }}
+                                required
+                            />
+                            {errorsComplete.delivery_proof && <p className="text-xs text-rose-600 mt-1">{errorsComplete.delivery_proof}</p>}
+                            
+                            {deliveryProofPreview && (
+                                <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                                    <img src={deliveryProofPreview} alt="Preview Bukti" className="w-full h-32 object-cover" />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-end gap-3 w-full">
+                        <button type="button" onClick={handleCloseDialog} className="pa-btn pa-btn-ghost">
+                            Batal
+                        </button>
+                        <button type="submit" disabled={processingComplete} className="pa-btn pa-btn-primary">
+                            {processingComplete ? 'Memproses...' : 'Ya, Lanjutkan'}
+                        </button>
+                    </div>
+                </form>
             </Dialog>
 
             <Toast 

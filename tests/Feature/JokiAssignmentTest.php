@@ -137,7 +137,10 @@ class JokiAssignmentTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->joki)
-            ->post(route('joki.orders.status', $order->id), ['status' => 'COMPLETED']);
+            ->post(route('joki.orders.status', $order->id), [
+                'status' => 'COMPLETED',
+                'delivery_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg'),
+            ]);
         $response->assertRedirect();
         $order->refresh();
         $this->assertEquals('COMPLETED', $order->status);
@@ -161,7 +164,10 @@ class JokiAssignmentTest extends TestCase
 
         // ASSIGNED → COMPLETED (skip — invalid)
         $response = $this->actingAs($this->joki)
-            ->post(route('joki.orders.status', $order->id), ['status' => 'COMPLETED']);
+            ->post(route('joki.orders.status', $order->id), [
+                'status' => 'COMPLETED',
+                'delivery_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg'),
+            ]);
         $response->assertSessionHasErrors('status');
 
         // Status should remain ASSIGNED
