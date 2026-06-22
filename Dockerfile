@@ -47,11 +47,10 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Setup Nginx Configuration
 COPY nginx-prod.conf /etc/nginx/http.d/default.conf
 
-# Fix permissions for Laravel storage & bootstrap cache
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-# Make the service startup script executable
+# Fix permissions for Laravel storage & bootstrap cache (Hugging Face runs as UID 1000)
+RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx /run/nginx && \
+    chown -R 1000:1000 /var/www /var/lib/nginx /var/log/nginx /run/nginx /etc/nginx
+RUN chmod -R 777 /var/www/storage /var/www/bootstrap/cache /var/lib/nginx /var/log/nginx /run/nginx
 RUN chmod +x /var/www/start-services.sh
 
 # Expose Nginx port
