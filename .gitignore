@@ -31,3 +31,6 @@ testsprite_tests\tmp\config.json
 testsprite_tests/
 test.jpg
 PasarAntar.png
+/public/*.png
+/public/*.jpg
+/public/*.jpeg
