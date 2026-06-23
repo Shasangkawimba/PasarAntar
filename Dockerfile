@@ -15,18 +15,16 @@ RUN npm ci --legacy-peer-deps && npm run build
 # ==========================================
 FROM php:8.3-fpm-alpine
 
-# Install system packages + PHP build dependencies (all pre-compiled by Alpine)
+# Minimal system packages (only what we actually need)
 RUN apk add --no-cache \
     nginx git unzip curl bash dos2unix \
-    libpng-dev libjpeg-turbo-dev freetype-dev \
-    libzip-dev icu-dev postgresql-dev
+    libzip-dev postgresql-dev
 
-# Install bundled PHP extensions (uses pre-compiled Alpine libs — fast)
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_pgsql pgsql bcmath gd zip intl opcache pcntl
+# Install only strictly required PHP extensions (fast — no ICU, no GD)
+RUN docker-php-ext-install -j$(nproc) \
+    pdo_pgsql pgsql bcmath zip opcache pcntl
 
-# Install Redis extension via PECL (only this one needs compilation)
+# Install Redis (only PECL compilation needed — small and fast)
 RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Composer
@@ -57,11 +55,10 @@ RUN mkdir -p \
     /var/www/bootstrap/cache \
     /var/lib/nginx/tmp \
     /var/log/nginx \
-    /run/nginx
+    /run/nginx \
+    && touch /var/www/storage/logs/laravel.log
 
-RUN touch /var/www/storage/logs/laravel.log
-
-# Fix startup script line endings and permissions
+# Fix startup script line endings and make executable
 RUN dos2unix /var/www/start-services.sh && chmod +x /var/www/start-services.sh
 
 # World-writable for HF Spaces (runs as random non-root UID)
