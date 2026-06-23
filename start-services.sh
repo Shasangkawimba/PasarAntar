@@ -102,4 +102,4 @@ echo ">>> Starting Nginx..."
 nginx -g "daemon off;" &
 
 echo ">>> Starting PHP-FPM..."
-exec php-fpm83 -F
+exec php-fpm84 -F

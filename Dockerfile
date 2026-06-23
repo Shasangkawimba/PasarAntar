@@ -11,43 +11,43 @@ COPY public ./public
 RUN npm ci --legacy-peer-deps && npm run build
 
 # ==========================================
-# STAGE 2: Production PHP + Nginx Container
-# Using Alpine native PHP packages = ZERO compilation, installs in seconds
+# STAGE 2: Production PHP 8.4 + Nginx
+# Alpine 3.22 has php84-* native packages = ZERO compilation
 # ==========================================
-FROM alpine:3.21
+FROM alpine:3.22
 
-# Enable community repo (needed for php83-pecl-redis) and install everything
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories \
+# Enable community repo and install PHP 8.4 + all needed extensions (pre-built, no compilation)
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories \
     && apk add --no-cache \
        nginx git unzip curl bash dos2unix \
-       php83 \
-       php83-fpm \
-       php83-pdo \
-       php83-pdo_pgsql \
-       php83-pgsql \
-       php83-pecl-redis \
-       php83-bcmath \
-       php83-zip \
-       php83-opcache \
-       php83-pcntl \
-       php83-mbstring \
-       php83-xml \
-       php83-dom \
-       php83-simplexml \
-       php83-xmlwriter \
-       php83-xmlreader \
-       php83-ctype \
-       php83-tokenizer \
-       php83-session \
-       php83-openssl \
-       php83-phar \
-       php83-fileinfo \
-       php83-curl \
-       php83-iconv
+       php84 \
+       php84-fpm \
+       php84-pdo \
+       php84-pdo_pgsql \
+       php84-pgsql \
+       php84-pecl-redis \
+       php84-bcmath \
+       php84-zip \
+       php84-opcache \
+       php84-pcntl \
+       php84-mbstring \
+       php84-xml \
+       php84-dom \
+       php84-simplexml \
+       php84-xmlwriter \
+       php84-xmlreader \
+       php84-ctype \
+       php84-tokenizer \
+       php84-session \
+       php84-openssl \
+       php84-phar \
+       php84-fileinfo \
+       php84-curl \
+       php84-iconv
 
-# Create symlinks so 'php' and 'php-fpm' commands work as expected
-RUN ln -sf /usr/bin/php83 /usr/bin/php \
-    && ln -sf /usr/sbin/php-fpm83 /usr/sbin/php-fpm
+# Create symlinks so 'php', 'php-fpm', and artisan work as expected
+RUN ln -sf /usr/bin/php84 /usr/bin/php \
+    && ln -sf /usr/sbin/php-fpm84 /usr/sbin/php-fpm84
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
