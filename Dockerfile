@@ -15,13 +15,19 @@ RUN npm ci --legacy-peer-deps && npm run build
 # ==========================================
 FROM php:8.3-fpm-alpine
 
-# Install system dependencies including dos2unix to fix Windows line endings
-RUN apk add --no-cache nginx git unzip curl bash dos2unix
+# Install system packages + PHP build dependencies (all pre-compiled by Alpine)
+RUN apk add --no-cache \
+    nginx git unzip curl bash dos2unix \
+    libpng-dev libjpeg-turbo-dev freetype-dev \
+    libzip-dev icu-dev postgresql-dev
 
-# Install PHP extensions
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-ENV MAKEFLAGS="-j2"
-RUN install-php-extensions pdo_pgsql pgsql redis bcmath gd zip intl opcache pcntl
+# Install bundled PHP extensions (uses pre-compiled Alpine libs — fast)
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_pgsql pgsql bcmath gd zip intl opcache pcntl
+
+# Install Redis extension via PECL (only this one needs compilation)
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -37,34 +43,35 @@ COPY --from=frontend-builder /app/public/build /var/www/public/build
 # Install PHP production dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# Copy Nginx config and fix its line endings
+# Setup Nginx
 COPY nginx-prod.conf /etc/nginx/http.d/default.conf
 RUN dos2unix /etc/nginx/http.d/default.conf
 
 # Create all required Laravel directories
-RUN mkdir -p /var/www/storage/logs \
-             /var/www/storage/framework/sessions \
-             /var/www/storage/framework/views \
-             /var/www/storage/framework/cache/data \
-             /var/www/storage/app/public \
-             /var/www/bootstrap/cache \
-             /var/lib/nginx/tmp \
-             /var/log/nginx \
-             /run/nginx
+RUN mkdir -p \
+    /var/www/storage/logs \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/views \
+    /var/www/storage/framework/cache/data \
+    /var/www/storage/app/public \
+    /var/www/bootstrap/cache \
+    /var/lib/nginx/tmp \
+    /var/log/nginx \
+    /run/nginx
 
-# Pre-create the log file
 RUN touch /var/www/storage/logs/laravel.log
 
-# Fix Windows line endings on the startup script, then make executable
+# Fix startup script line endings and permissions
 RUN dos2unix /var/www/start-services.sh && chmod +x /var/www/start-services.sh
 
-# Make everything world-writable (HF Spaces runs as random non-root UID)
-RUN chmod -R 777 /var/www/storage \
-                 /var/www/bootstrap/cache \
-                 /var/lib/nginx \
-                 /var/log/nginx \
-                 /run/nginx \
-                 /etc/nginx
+# World-writable for HF Spaces (runs as random non-root UID)
+RUN chmod -R 777 \
+    /var/www/storage \
+    /var/www/bootstrap/cache \
+    /var/lib/nginx \
+    /var/log/nginx \
+    /run/nginx \
+    /etc/nginx
 
 EXPOSE 7860
 
