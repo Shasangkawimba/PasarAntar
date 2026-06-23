@@ -1,72 +1,60 @@
-#!/bin/bash
-
-set -e
+#!/bin/sh
+# NOTE: Written with LF line endings. Do NOT edit with Windows tools without converting back.
 
 echo "=== Pasar Antar Startup ==="
 
 # -------------------------------------------------------
-# Generate .env from environment variables (HF Spaces)
+# Generate .env from HF Spaces environment variables
 # -------------------------------------------------------
 echo ">>> Generating .env..."
-cat > /var/www/.env << EOF
-APP_NAME="Pasar Antar"
-APP_ENV=production
-APP_KEY=${APP_KEY}
-APP_DEBUG=false
-APP_URL=${APP_URL:-http://localhost:7860}
+printf 'APP_NAME="Pasar Antar"\n' > /var/www/.env
+printf 'APP_ENV=production\n' >> /var/www/.env
+printf 'APP_KEY=%s\n' "${APP_KEY}" >> /var/www/.env
+printf 'APP_DEBUG=false\n' >> /var/www/.env
+printf 'APP_URL=%s\n' "${APP_URL:-http://localhost:7860}" >> /var/www/.env
+printf 'APP_LOCALE=en\n' >> /var/www/.env
+printf 'APP_FALLBACK_LOCALE=en\n' >> /var/www/.env
+printf 'APP_FAKER_LOCALE=en_US\n' >> /var/www/.env
+printf 'APP_MAINTENANCE_DRIVER=file\n' >> /var/www/.env
+printf 'BCRYPT_ROUNDS=12\n' >> /var/www/.env
+printf 'LOG_CHANNEL=errorlog\n' >> /var/www/.env
+printf 'LOG_DEPRECATIONS_CHANNEL=null\n' >> /var/www/.env
+printf 'LOG_LEVEL=error\n' >> /var/www/.env
+printf 'DB_CONNECTION=pgsql\n' >> /var/www/.env
+printf 'DB_HOST=%s\n' "${DB_HOST}" >> /var/www/.env
+printf 'DB_PORT=%s\n' "${DB_PORT:-5432}" >> /var/www/.env
+printf 'DB_DATABASE=%s\n' "${DB_DATABASE}" >> /var/www/.env
+printf 'DB_USERNAME=%s\n' "${DB_USERNAME}" >> /var/www/.env
+printf 'DB_PASSWORD=%s\n' "${DB_PASSWORD}" >> /var/www/.env
+printf 'SESSION_DRIVER=database\n' >> /var/www/.env
+printf 'SESSION_LIFETIME=120\n' >> /var/www/.env
+printf 'SESSION_ENCRYPT=false\n' >> /var/www/.env
+printf 'SESSION_PATH=/\n' >> /var/www/.env
+printf 'SESSION_DOMAIN=null\n' >> /var/www/.env
+printf 'BROADCAST_CONNECTION=reverb\n' >> /var/www/.env
+printf 'FILESYSTEM_DISK=local\n' >> /var/www/.env
+printf 'QUEUE_CONNECTION=redis\n' >> /var/www/.env
+printf 'CACHE_STORE=redis\n' >> /var/www/.env
+printf 'REDIS_CLIENT=phpredis\n' >> /var/www/.env
+printf 'REDIS_HOST=%s\n' "${REDIS_HOST}" >> /var/www/.env
+printf 'REDIS_PASSWORD=%s\n' "${REDIS_PASSWORD:-null}" >> /var/www/.env
+printf 'REDIS_PORT=%s\n' "${REDIS_PORT:-6379}" >> /var/www/.env
+printf 'MAIL_MAILER=log\n' >> /var/www/.env
+printf 'MAIL_FROM_ADDRESS=noreply@pasarantar.com\n' >> /var/www/.env
+printf 'MAIL_FROM_NAME="Pasar Antar"\n' >> /var/www/.env
+printf 'REVERB_APP_ID=%s\n' "${REVERB_APP_ID:-123456}" >> /var/www/.env
+printf 'REVERB_APP_KEY=%s\n' "${REVERB_APP_KEY:-pasar_antar_key}" >> /var/www/.env
+printf 'REVERB_APP_SECRET=%s\n' "${REVERB_APP_SECRET:-pasar_antar_secret}" >> /var/www/.env
+printf 'REVERB_HOST=127.0.0.1\n' >> /var/www/.env
+printf 'REVERB_PORT=8090\n' >> /var/www/.env
+printf 'REVERB_SCHEME=http\n' >> /var/www/.env
+printf 'VITE_REVERB_APP_KEY=%s\n' "${REVERB_APP_KEY:-pasar_antar_key}" >> /var/www/.env
+printf 'VITE_REVERB_HOST=%s\n' "${APP_URL:-localhost}" >> /var/www/.env
+printf 'VITE_REVERB_PORT=443\n' >> /var/www/.env
+printf 'VITE_REVERB_SCHEME=https\n' >> /var/www/.env
 
-APP_LOCALE=en
-APP_FALLBACK_LOCALE=en
-APP_FAKER_LOCALE=en_US
-
-APP_MAINTENANCE_DRIVER=file
-
-BCRYPT_ROUNDS=12
-
-LOG_CHANNEL=stderr
-LOG_DEPRECATIONS_CHANNEL=null
-LOG_LEVEL=error
-
-DB_CONNECTION=pgsql
-DB_HOST=${DB_HOST}
-DB_PORT=${DB_PORT:-5432}
-DB_DATABASE=${DB_DATABASE}
-DB_USERNAME=${DB_USERNAME}
-DB_PASSWORD=${DB_PASSWORD}
-
-SESSION_DRIVER=database
-SESSION_LIFETIME=120
-SESSION_ENCRYPT=false
-SESSION_PATH=/
-SESSION_DOMAIN=null
-
-BROADCAST_CONNECTION=reverb
-FILESYSTEM_DISK=local
-QUEUE_CONNECTION=redis
-
-CACHE_STORE=redis
-
-REDIS_CLIENT=phpredis
-REDIS_HOST=${REDIS_HOST}
-REDIS_PASSWORD=${REDIS_PASSWORD:-null}
-REDIS_PORT=${REDIS_PORT:-6379}
-
-MAIL_MAILER=log
-MAIL_FROM_ADDRESS="noreply@pasarantar.com"
-MAIL_FROM_NAME="Pasar Antar"
-
-REVERB_APP_ID=${REVERB_APP_ID:-123456}
-REVERB_APP_KEY=${REVERB_APP_KEY:-pasar_antar_key}
-REVERB_APP_SECRET=${REVERB_APP_SECRET:-pasar_antar_secret}
-REVERB_HOST=127.0.0.1
-REVERB_PORT=8090
-REVERB_SCHEME=http
-
-VITE_REVERB_APP_KEY=${REVERB_APP_KEY:-pasar_antar_key}
-VITE_REVERB_HOST=${APP_URL:-localhost}
-VITE_REVERB_PORT=443
-VITE_REVERB_SCHEME=https
-EOF
+echo ">>> .env generated. Contents:"
+cat /var/www/.env
 
 # -------------------------------------------------------
 # Ensure writable directories exist
@@ -78,24 +66,28 @@ mkdir -p /var/www/storage/logs \
          /var/www/storage/app/public \
          /var/www/bootstrap/cache
 
-chmod -R 777 /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
+chmod -R 777 /var/www/storage /var/www/bootstrap/cache
 
-# Create storage symlink
-php artisan storage:link --force 2>/dev/null || true
+# Storage symlink
+php artisan storage:link --force || true
 
 # -------------------------------------------------------
-# Database migrations
+# Wait for DB then migrate
 # -------------------------------------------------------
 echo ">>> Running migrations..."
 php artisan migrate --force
+if [ $? -ne 0 ]; then
+    echo "ERROR: Migration failed. Check DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD env vars."
+    exit 1
+fi
 
 # -------------------------------------------------------
 # Cache optimization
 # -------------------------------------------------------
 echo ">>> Caching..."
-php artisan config:cache  || echo "config:cache skipped"
-php artisan route:cache   || echo "route:cache skipped"
-php artisan view:cache    || echo "view:cache skipped"
+php artisan config:cache || echo "WARN: config:cache failed, skipping"
+php artisan route:cache  || echo "WARN: route:cache failed, skipping"
+php artisan view:cache   || echo "WARN: view:cache failed, skipping"
 
 # -------------------------------------------------------
 # Start background services
@@ -109,8 +101,5 @@ php artisan queue:work redis --sleep=3 --tries=3 --timeout=90 >> /var/www/storag
 echo ">>> Starting Nginx..."
 nginx -g "daemon off;" &
 
-# -------------------------------------------------------
-# Start PHP-FPM in foreground (keeps container alive)
-# -------------------------------------------------------
 echo ">>> Starting PHP-FPM..."
 exec php-fpm

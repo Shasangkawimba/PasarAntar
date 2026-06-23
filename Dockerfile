@@ -15,8 +15,8 @@ RUN npm ci --legacy-peer-deps && npm run build
 # ==========================================
 FROM php:8.3-fpm-alpine
 
-# Install system dependencies
-RUN apk add --no-cache nginx git unzip curl bash shadow
+# Install system dependencies including dos2unix to fix Windows line endings
+RUN apk add --no-cache nginx git unzip curl bash dos2unix
 
 # Install PHP extensions
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
@@ -31,16 +31,17 @@ WORKDIR /var/www
 # Copy application source
 COPY . /var/www
 
-# Copy compiled frontend assets
+# Copy compiled frontend assets from Stage 1
 COPY --from=frontend-builder /app/public/build /var/www/public/build
 
 # Install PHP production dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# Copy Nginx config
+# Copy Nginx config and fix its line endings
 COPY nginx-prod.conf /etc/nginx/http.d/default.conf
+RUN dos2unix /etc/nginx/http.d/default.conf
 
-# Create all required Laravel directories and ensure they exist
+# Create all required Laravel directories
 RUN mkdir -p /var/www/storage/logs \
              /var/www/storage/framework/sessions \
              /var/www/storage/framework/views \
@@ -51,10 +52,13 @@ RUN mkdir -p /var/www/storage/logs \
              /var/log/nginx \
              /run/nginx
 
-# Pre-create the log file so permissions are set correctly
+# Pre-create the log file
 RUN touch /var/www/storage/logs/laravel.log
 
-# Make everything world-writable so any UID (including HF Spaces random UID) can write
+# Fix Windows line endings on the startup script, then make executable
+RUN dos2unix /var/www/start-services.sh && chmod +x /var/www/start-services.sh
+
+# Make everything world-writable (HF Spaces runs as random non-root UID)
 RUN chmod -R 777 /var/www/storage \
                  /var/www/bootstrap/cache \
                  /var/lib/nginx \
@@ -62,9 +66,6 @@ RUN chmod -R 777 /var/www/storage \
                  /run/nginx \
                  /etc/nginx
 
-# Make startup script executable
-RUN chmod +x /var/www/start-services.sh
-
 EXPOSE 7860
 
-CMD ["/bin/bash", "/var/www/start-services.sh"]
+CMD ["/bin/sh", "/var/www/start-services.sh"]
