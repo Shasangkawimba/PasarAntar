@@ -12,20 +12,42 @@ RUN npm ci --legacy-peer-deps && npm run build
 
 # ==========================================
 # STAGE 2: Production PHP + Nginx Container
+# Using Alpine native PHP packages = ZERO compilation, installs in seconds
 # ==========================================
-FROM php:8.3-fpm-alpine
+FROM alpine:3.21
 
-# Minimal system packages (only what we actually need)
-RUN apk add --no-cache \
-    nginx git unzip curl bash dos2unix \
-    libzip-dev postgresql-dev
+# Enable community repo (needed for php83-pecl-redis) and install everything
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories \
+    && apk add --no-cache \
+       nginx git unzip curl bash dos2unix \
+       php83 \
+       php83-fpm \
+       php83-pdo \
+       php83-pdo_pgsql \
+       php83-pgsql \
+       php83-pecl-redis \
+       php83-bcmath \
+       php83-zip \
+       php83-opcache \
+       php83-pcntl \
+       php83-mbstring \
+       php83-xml \
+       php83-dom \
+       php83-simplexml \
+       php83-xmlwriter \
+       php83-xmlreader \
+       php83-ctype \
+       php83-tokenizer \
+       php83-session \
+       php83-openssl \
+       php83-phar \
+       php83-fileinfo \
+       php83-curl \
+       php83-iconv
 
-# Install only strictly required PHP extensions (fast — no ICU, no GD)
-RUN docker-php-ext-install -j$(nproc) \
-    pdo_pgsql pgsql bcmath zip opcache pcntl
-
-# Install Redis (only PECL compilation needed — small and fast)
-RUN pecl install redis && docker-php-ext-enable redis
+# Create symlinks so 'php' and 'php-fpm' commands work as expected
+RUN ln -sf /usr/bin/php83 /usr/bin/php \
+    && ln -sf /usr/sbin/php-fpm83 /usr/sbin/php-fpm
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -56,6 +78,7 @@ RUN mkdir -p \
     /var/lib/nginx/tmp \
     /var/log/nginx \
     /run/nginx \
+    /run/php-fpm \
     && touch /var/www/storage/logs/laravel.log
 
 # Fix startup script line endings and make executable
@@ -68,6 +91,7 @@ RUN chmod -R 777 \
     /var/lib/nginx \
     /var/log/nginx \
     /run/nginx \
+    /run/php-fpm \
     /etc/nginx
 
 EXPOSE 7860
