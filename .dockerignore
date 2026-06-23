@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Local environment (generated at runtime from HF Spaces secrets)
+.env
+.env.*
+!.env.example
+
+# Dependencies (installed during build)
+/node_modules
+/vendor
+
+# Build output (rebuilt during Docker build)
+/public/build
+/public/hot
+/public/storage
+
+# Storage (writable at runtime)
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+
+# Bootstrap cache (generated at runtime)
+/bootstrap/cache/*.php
+
+# Test files
+/tests
+/testsprite_tests
+.phpunit.result.cache
+.playwright-mcp
+
+# IDE / editor
+/.vscode
+/.idea
+/.cursor
+/.nova
+/.zed
+/.editorconfig
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
